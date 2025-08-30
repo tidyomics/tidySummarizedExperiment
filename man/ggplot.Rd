@@ -69,6 +69,11 @@ pasilla \%>\%
     geom_boxplot()
 
 }
+\references{
+Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
+
+Wickham, H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York. ISBN 978-3-319-24277-4, https://ggplot2.tidyverse.org
+}
 \seealso{
 The \href{https://ggplot2-book.org/getting-started}{first steps chapter} of the online ggplot2 book.
 }
