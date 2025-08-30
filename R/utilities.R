@@ -337,6 +337,7 @@ get_abundance_sc_long <- function(.data, transcripts = NULL, all = FALSE,
     Reduce(function(...) left_join(..., by = c(f_(.data)$name, "cell")), .)
 }
 
+
 #' @importFrom methods .hasSlot
 #' @importFrom S4Vectors DataFrame
 #' @importFrom SummarizedExperiment colData
@@ -357,70 +358,8 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
   # Comply to CRAN notes 
   . <- NULL 
   
-  # Get the colnames of samples and feature datasets
-  colnames_col <- 
-    colnames(colData(se)) %>% 
-    c(s_(se)$name) %>%
-    
-    # Forcefully add the column I know the source. This is useful in nesting 
-    # where a unique value cannot be linked to sample or feature
-    c(names(column_belonging[column_belonging == s_(se)$name]))
-  
-  colnames_row <- se %>%
-    when(
-      .hasSlot(., "rowData") | .hasSlot(., "elementMetadata") ~ colnames(rowData(.)), 
-      TRUE ~ c()
-    ) %>% 
-    c(f_(se)$name) %>%
-    
-    # Forcefully add the column I know the source. This is useful in nesting 
-    # where a unique value cannot be linked to sample or feature
-    c(names(column_belonging[column_belonging == f_(se)$name]))
-  
-  special_columns <- get_special_columns(
-    # Decrease the size of the dataset
-    se[1:min(100, nrow(se)), min(1, ncol(se)):min(20, ncol(se))]
-  ) 
-  
-  # This is used if I have one column with one value that can be mapped to rows and columns
-  new_colnames_col = c()
-  
-  # This condiction is because if I don't have any samples, the new column 
-  # could be mapped to samples and return NA in the final SE
-  if(ncol(se) > 0)
-    new_colnames_col <- 
-    .data_mutated %>%
-    select_if(!colnames(.) %in% setdiff(colnames_col, s_(se)$name)) %>% 
-    
-    # Eliminate special columns that are read only. Assays
-    select_if(!colnames(.) %in% special_columns) %>%
-    select_if(!colnames(.) %in% colnames_row) %>%
-    # Replace for subset
-    select(!!s_(se)$symbol, get_subset_columns(., !!s_(se)$symbol)) %>% 
-    colnames()
-  
-  col_data <-
-    .data_mutated %>%
-    
-    select(c(colnames_col, new_colnames_col)) %>%
-    
-    
-    # Filter Sample is NA from SE that have 0 samples
-    filter(!is.na(!!s_(se)$symbol)) 
-  
-  # This works even if I have 0 samples
-  duplicated_samples = col_data |> pull(!!s_(se)$symbol) %>% duplicated() 
-  if(duplicated_samples |> which() |>  length() > 0)
-    # Make fast distinct()
-    col_data = col_data |> filter(!duplicated_samples)
-  
-  col_data = 
-    col_data |> 
-    
-    # In case unitary SE subset does not work
-    data.frame(row.names = pull(col_data, !!s_(se)$symbol), check.names = FALSE) %>%
-    select(-!!s_(se)$symbol) %>%
-    DataFrame(check.names = FALSE)
+  # Extract column data
+  col_data <- extract_col_data(.data_mutated, se, column_belonging)
   
   # This to avoid the mismatch between missing column names for counts 
   # and numerical row names for colData
@@ -432,26 +371,8 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
       ~ (.)
     )
   
-  row_data <-
-    .data_mutated %>%
-    
-    # Eliminate special columns that are read only 
-    select_if(!colnames(.) %in% special_columns) %>%
-    
-    #eliminate sample columns directly
-    select_if(!colnames(.) %in% c(s_(se)$name, colnames(col_data))) %>%
-    
-    # select(one_of(colnames(rowData(se))))
-    # Replace for subset
-    select(!!f_(se)$symbol,  get_subset_columns(., !!f_(se)$symbol) ) %>%
-    
-    # Make fast distinct()
-    filter(pull(., !!f_(se)$symbol) %>% duplicated() %>% not()) %>% 
-    
-    # In case unitary SE subset does not work because all same
-    data.frame(row.names = pull(.,f_(se)$symbol), check.names = FALSE) %>%
-    select(-!!f_(se)$symbol) %>%
-    DataFrame(check.names = FALSE)
+  # Extract row data
+  row_data <- extract_row_data(.data_mutated, se, col_data = col_data)
   
   # This to avoid the mismatch between missing row names for counts 
   # and numerical row names for rowData
@@ -470,16 +391,11 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
   colData(se) <- col_data
   rowData(se) <- row_data
   
-  # Count-like data that is NOT in the assay slot already 
-  colnames_assay <-
-    colnames(.data_mutated) %>% 
-    setdiff(c(f_(se)$name, s_(se)$name, colnames(as.data.frame(head(rowRanges(se), 1))) )) %>%
-    setdiff(colnames(col_data)) %>% 
-    setdiff(colnames(row_data)) %>%
-    setdiff(assays(se) %>% names)
+  # Extract assay column names
+  colnames_assay <- extract_assay_colnames(.data_mutated, se, col_data, row_data)
   
   if (length(colnames_assay) > 0)
-    assays(se) = #, withDimnames=FALSE) = 
+    assays(se, withDimnames=FALSE) <- 
     assays(se, withDimnames = FALSE) %>% c(
       .data_mutated %>% 
         
