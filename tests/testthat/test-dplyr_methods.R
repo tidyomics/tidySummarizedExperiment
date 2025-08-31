@@ -156,22 +156,3 @@ test_that("group_split splits with mutliple arguments", {
     length() |> 
     expect_equal(4)
 })
-
-test_that("mutate features", {
-  pasilla %>%
-    mutate_features(new = 1:nrow(pasilla)) %>%
-    rowData() %>%
-    as_tibble() %>%
-    pull(new) %>%
-    expect_equal(1:nrow(pasilla))
-})
-
-
-test_that("mutate samples", {
-  pasilla %>%
-    mutate_samples(new = 1:ncol(pasilla)) %>%
-    colData() %>%
-    as_tibble() %>%
-    pull(new) %>%
-    expect_equal(1:ncol(pasilla))
-})

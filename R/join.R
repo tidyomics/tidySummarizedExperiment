@@ -34,7 +34,7 @@ analyze_query_scope_join <- function(se, join_keys) {
   )
 }
 
-
+#' @importFrom purrr when
 join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE, 
                                   suffix = c(".x", ".y"), join_function, 
                                   force_tibble_route = FALSE,
@@ -52,13 +52,13 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
   colnames_col <- get_colnames_col(x)
   colnames_row <- get_rownames_col(x)
   
-  # See if join done by sample, feature or both (determine join keys)
+  # See if join done by sample, feature or both
   columns_query <- by %>% when(
     !is.null(.) ~ choose_name_if_present(.), 
     ~ colnames(y) %>% intersect(c(colnames_col, colnames_row))
   )
-
-  # Analyze scope similar to mutate/filter
+  
+  # Analyze join scope
   scope_report <- analyze_query_scope_join(x, columns_query)
   
   if (
@@ -91,7 +91,7 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
         ~ update_SE_from_tibble(., x)
       )
     
-    # Attach latest join scope metadata if we returned an SE
+    # Attach metadata if we returned an SE
     if (methods::is(out, "SummarizedExperiment")) {
       meta <- S4Vectors::metadata(out)
       if (is.null(meta)) meta <- list()
@@ -181,31 +181,12 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
   else stop("tidySummarizedExperiment says: ERROR FOR DEVELOPERS: this option should not exist. In join utility.")
 }
 
-#' @name left_join
-#' @rdname left_join
-#' @inherit dplyr::left_join
-#'
-#' @examples
-#' data(pasilla)
-#'
-#' tt <- pasilla 
-#' tt |> left_join(tt |>
-#'     distinct(condition) |>
-#'     mutate(new_column=1:2))
-#'
-#' @importFrom SummarizedExperiment colData
-#' @importFrom dplyr left_join
-#' @importFrom dplyr count
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-left_join.SummarizedExperiment <- function(x, y, by=NULL,
-    copy=FALSE, suffix=c(".x", ".y"), ...) {
+
+left_join.SummarizedExperiment <- function(x, y, by = NULL,
+    copy = FALSE, suffix = c(".x", ".y"), ...) {
   
-    join_efficient_for_SE(x, y, by=by, copy=copy,
-        suffix=suffix, dplyr::left_join, ...)
+    join_efficient_for_SE(x, y, by = by, copy = copy,
+        suffix = suffix, dplyr::left_join, ...)
 
 }
 
