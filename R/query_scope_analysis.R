@@ -361,10 +361,6 @@ analyze_query_scope_post_operation <- function(se, .cols, .data_modified, operat
 }
 
 
-
-
-
-
 #' Apply any dplyr operation to feature metadata (rowData)
 #'
 #' This is a general function that allows applying any dplyr operation

@@ -149,12 +149,20 @@ mutate.SummarizedExperiment <- function(.data, ...) {
         scope_report <- analyze_query_scope_mutate(.data, ...)
         scope <- scope_report$scope
 
+        result <-
         if(scope == "coldata_only") modify_samples(.data, "mutate", ...)
         else if(scope == "rowdata_only") modify_features(.data, "mutate", ...)
         else if(scope == "assay_only") mutate_assay(.data, ...)
         else if(scope == "mixed") modify_se_plyxp(.data, "mutate", scope_report, ...)
         else mutate_via_tibble(.data, ...)
 
+        # Record latest mutate scope into metadata for testing/introspection
+        meta <- S4Vectors::metadata(result)
+        if (is.null(meta)) meta <- list()
+        meta$latest_mutate_scope_report <- scope_report
+        S4Vectors::metadata(result) <- meta
+
+        return(result)
 
 }
 
