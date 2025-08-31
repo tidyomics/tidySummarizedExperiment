@@ -421,41 +421,8 @@ mutate_assay <- function(.data, ...) {
     return(.data)
 }
 
-#' @name mutate
-#' @rdname mutate
-#' @inherit dplyr::mutate
-#' @family single table verbs
-#'
-#' @examples
-#' data(pasilla)
-#' pasilla |> mutate(logcounts=log2(counts))
-#'
-#' @importFrom rlang enquos
-#' @importFrom dplyr mutate
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @importFrom purrr map
-#' @export
-mutate.SummarizedExperiment <- function(.data, ...) {
-
-       # Check if query is composed (multiple expressions)
-    if (is_composed("mutate", ...)) return(substitute_decompose("mutate", ...)(.data))
-
-        # Check for scope
-        scope_report <- analyze_query_scope_mutate(.data, ...)
-        if(scope_report$scope == "coldata_only") {
-            return(modify_samples(.data, "mutate", ...))
-        } else if(scope_report$scope == "rowdata_only") {
-            return(modify_features(.data, "mutate", ...))
-        } else if(scope_report$scope == "assay_only") {
-            return(mutate_assay(.data, ...))
-                } else if(scope_report$scope == "mixed") {
-            # Use plyxp-style optimization for mixed operations
-            return(modify_se_plyxp(.data, "mutate", scope_report, ...))
-        } else {
-            # For other cases, use tibble conversion
+# Internal helper: perform mutate via tibble conversion and map back to SE
+mutate_via_tibble <- function(.data, ...) {
     # Check that we are not modifying a key column
     cols <- enquos(...) |> names()
     
@@ -478,7 +445,7 @@ mutate.SummarizedExperiment <- function(.data, ...) {
         ) |> 
         length() |>
         gt(0)
-
+    
     if (tst) {
         columns <-
             special_columns |>
@@ -492,19 +459,52 @@ mutate.SummarizedExperiment <- function(.data, ...) {
             " make a copy and mutate that one."
         )
     }
-
+    
     # If Ranges column not in query perform fast as_tibble
     skip_GRanges <-
         get_GRanges_colnames() %in% 
         cols |>
         not()
+    
+    return(.data |>
+        as_tibble(skip_GRanges=skip_GRanges) |>
+        dplyr::mutate(...) |>
+        update_SE_from_tibble(.data))
+}
 
+#' @name mutate
+#' @rdname mutate
+#' @inherit dplyr::mutate
+#' @family single table verbs
+#'
+#' @examples
+#' data(pasilla)
+#' pasilla |> mutate(logcounts=log2(counts))
+#'
+#' @importFrom rlang enquos
+#' @importFrom dplyr mutate
+#' @references
+#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
+#' 
+#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
+#' @importFrom purrr map
+#' @export
+mutate.SummarizedExperiment <- function(.data, ...) {
+
+       # Check if query is composed (multiple expressions)
+    if (is_composed("mutate", ...)) return(substitute_decompose("mutate", ...)(.data))
  
-            return(.data |>
-                as_tibble(skip_GRanges=skip_GRanges) |>
-                dplyr::mutate(...) |>
-                update_SE_from_tibble(.data))
-        }
+        # Check for scope and dispatch elegantly
+        scope_report <- analyze_query_scope_mutate(.data, ...)
+        scope <- scope_report$scope
+        result <- dplyr::case_when(
+            scope == "coldata_only" ~ list(modify_samples(.data, "mutate", ...)),
+            scope == "rowdata_only" ~ list(modify_features(.data, "mutate", ...)),
+            scope == "assay_only"   ~ list(mutate_assay(.data, ...)),
+            scope == "mixed"        ~ list(modify_se_plyxp(.data, "mutate", scope_report, ...)),
+            TRUE                     ~ list(mutate_via_tibble(.data, ...))
+        )[[1]]
+        return(result)
 
 
 }
