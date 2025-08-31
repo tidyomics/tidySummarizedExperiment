@@ -479,8 +479,8 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
     setdiff(assays(se) %>% names)
   
   if (length(colnames_assay) > 0)
-    assays(se) = #, withDimnames=FALSE) = 
-    assays(se, withDimnames = FALSE) %>% c(
+    assays(se, withDimnames = FALSE) <- 
+    c(assays(se, withDimnames = FALSE),
       .data_mutated %>% 
         
         # Select assays column
@@ -514,7 +514,7 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
         
         # Create correct list
         pull(data___) %>%
-        reduce(c) 
+        reduce(c)
     )
   
   # return

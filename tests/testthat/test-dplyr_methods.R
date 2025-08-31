@@ -181,6 +181,16 @@ test_that("mutate counts", {
   
   })
 
+test_that("mutate creates new assay from counts and preserves dimnames", {
+    data(pasilla)
+    se <- pasilla[1:200, ]
+    res <- se %>% mutate(counts_copy = counts)
+    expect_true("counts_copy" %in% assayNames(res))
+    expect_equal(as.matrix(assay(res, "counts_copy")), as.matrix(assay(se, "counts")))
+    expect_identical(rownames(assay(res, "counts_copy")), rownames(assay(se, "counts")))
+    expect_identical(colnames(assay(res, "counts_copy")), colnames(assay(se, "counts")))
+})
+
 test_that("group_split splits character columns", {
   data(pasilla)
   pasilla |> 
