@@ -442,6 +442,7 @@ mutate.SummarizedExperiment <- function(.data, ...) {
 
        # Check if query is composed (multiple expressions)
     if (is_composed("mutate", ...)) return(substitute_decompose("mutate", ...)(.data))
+
         # Check for scope
         scope_report <- analyze_query_scope_mutate(.data, ...)
         if(scope_report$scope == "coldata_only") {
@@ -450,7 +451,11 @@ mutate.SummarizedExperiment <- function(.data, ...) {
             return(modify_features(.data, "mutate", ...))
         } else if(scope_report$scope == "assay_only") {
             return(mutate_assay(.data, ...))
+                } else if(scope_report$scope == "mixed") {
+            # Use plyxp-style optimization for mixed operations
+            return(modify_se_plyxp(.data, "mutate", scope_report, ...))
         } else {
+            # For other cases, use tibble conversion
     # Check that we are not modifying a key column
     cols <- enquos(...) |> names()
     
