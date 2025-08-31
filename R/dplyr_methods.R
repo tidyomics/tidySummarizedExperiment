@@ -417,7 +417,41 @@ summarize.SummarizedExperiment <- summarise.SummarizedExperiment
 #' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
 #' @importFrom purrr map
 #' @export
+
+# Simple helper function for assay-only mutations
+mutate_assay <- function(.data, ...) {
+    # Get the mutation expressions
+    dots <- enquos(...)
+    
+    # For each new assay column, add it directly to assays
+    for (i in seq_along(dots)) {
+        new_assay_name <- names(dots)[i]
+        expr <- dots[[i]]
+        
+        # Evaluate the expression to create the new assay
+        # This assumes the expression references existing assay names
+        new_assay_data <- rlang::eval_tidy(expr, data = as.list(assays(.data)))
+        
+        # Add the new assay
+        assays(.data)[[new_assay_name]] <- new_assay_data
+    }
+    
+    return(.data)
+}
+
 mutate.SummarizedExperiment <- function(.data, ...) {
+
+       # Check if query is composed (multiple expressions)
+    if (is_composed("mutate", ...)) return(substitute_decompose("mutate", ...)(.data))
+        # Check for scope
+        scope_report <- analyze_query_scope_mutate(.data, ...)
+        if(scope_report$scope == "coldata_only") {
+            return(modify_samples(.data, "mutate", ...))
+        } else if(scope_report$scope == "rowdata_only") {
+            return(modify_features(.data, "mutate", ...))
+        } else if(scope_report$scope == "assay_only") {
+            return(mutate_assay(.data, ...))
+        } else {
     # Check that we are not modifying a key column
     cols <- enquos(...) |> names()
     
@@ -441,7 +475,6 @@ mutate.SummarizedExperiment <- function(.data, ...) {
         length() |>
         gt(0)
 
-
     if (tst) {
         columns <-
             special_columns |>
@@ -461,58 +494,18 @@ mutate.SummarizedExperiment <- function(.data, ...) {
         get_GRanges_colnames() %in% 
         cols |>
         not()
-    
-    .data |>
-        as_tibble(skip_GRanges=skip_GRanges) |>
-        dplyr::mutate(...) |>
-        update_SE_from_tibble(.data)
+
+ 
+            return(.data |>
+                as_tibble(skip_GRanges=skip_GRanges) |>
+                dplyr::mutate(...) |>
+                update_SE_from_tibble(.data))
+        }
+
+
 }
 
-#' Mutate features
-#'
-#' Allows mutate call on features (rowData)
-#' of a SummarizedExperiment
-#'
-#' @param .data a SummarizedExperiment
-#' @param ... extra arguments passed to dplyr::mutate
-#'
-#' @return a SummarizedExperiment with modified rowData
-#' 
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' @export
-mutate_features <- function(.data, ...) {
-  feature_info <- rowData(.data) |>
-    tibble::as_tibble() |>
-    dplyr::mutate(...) |>
-    as("DataFrame")
-  rowData(.data) <- feature_info
-  return(.data)
-}
 
-#' Mutate samples
-#'
-#' Allows mutate call on samples (colData)
-#' of a SummarizedExperiment
-#'
-#' @param .data a SummarizedExperiment
-#' @param ... extra arguments passed to dplyr::mutate
-#'
-#' @return a SummarizedExperiment with modified colData
-#'
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#'
-#' @export
-mutate_samples <- function(.data, ...) {
-  sample_info <- colData(.data) |>
-    tibble::as_tibble() |>
-    dplyr::mutate(...) |>
-    as("DataFrame")
-  colData(.data) <- sample_info
-  return(.data)
-}
 
 #' @name rename
 #' @rdname rename

@@ -395,7 +395,7 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
   colnames_assay <- extract_assay_colnames(.data_mutated, se, col_data, row_data)
   
   if (length(colnames_assay) > 0)
-    assays(se, withDimnames=FALSE) <- 
+    assays(se, withDimnames = FALSE) <-
     assays(se, withDimnames = FALSE) %>% c(
       .data_mutated %>% 
         
