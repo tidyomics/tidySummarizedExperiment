@@ -51,7 +51,7 @@ test_that("mutate", {
 
 test_that("rename", {
     pasilla %>%
-        rename(groups = condition) %>%
+        rename(groups = condition, type_2 = type) %>%
         select(groups) %>%
         ncol() %>%
         expect_equal(1)

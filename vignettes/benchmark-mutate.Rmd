@@ -93,7 +93,12 @@ benchmark_scenarios <- function() {
     complex_nested = quo({ se %>% mutate(complex_category = ifelse(dex == "trt" & avgLength > mean(avgLength), "treated_long", ifelse(dex == "untrt", "untreated", "other"))) }),
     mixed_assay_coldata = quo({ se %>% mutate(new_counts = counts * avgLength) }),
     multiple_simple_assay = quo({ se %>% mutate(normalized_counts = counts / 1000, sqrt_counts = sqrt(counts)) }),
-    chained_mutates = quo({ se %>% mutate(tmp = avgLength * 2) %>% mutate(flag = ifelse(tmp > mean(tmp), 1, 0)) })
+    chained_mutates = quo({ se %>% mutate(tmp = avgLength * 2) %>% mutate(flag = ifelse(tmp > mean(tmp), 1, 0)) }),
+
+    # Filter benchmarks (scoped and non-rectangular)
+    filter_coldata_simple = quo({ se %>% filter(dex == "trt") }),
+    filter_coldata_numeric = quo({ se %>% filter(avgLength > median(avgLength)) }),
+    filter_assay_nonrect = quo({ se %>% filter(counts > 0) })
   )
 }
 
@@ -171,7 +176,8 @@ load_branch_code(wt_b)
 init_b <- function() suppressMessages(devtools::load_all(wt_b, quiet = TRUE))
 res_b <- run_all_scenarios_parallel(branch_label = "query-to-slot-routines", reps = 20L, workers = 1L, initializer = init_b)
 
-results <- dplyr::bind_rows(res_a, res_b)
+results <- dplyr::bind_rows(res_a, res_b) %>%
+  dplyr::mutate(operation = ifelse(grepl("^filter", scenario), "filter", "mutate"))
 
 summary_table <- results %>%
   group_by(branch, scenario) %>%
@@ -197,8 +203,9 @@ ggplot(results, aes(x = scenario, y = elapsed_ms, fill = branch)) +
   ) +
   scale_y_log10() + 
   coord_flip() +
+  facet_grid(operation ~ ., scales = "free_y", space = "free_y") +
   annotation_logticks(sides = "b") +
-  labs(title = "Mutate benchmark across branches",
+  labs(title = "Mutate and Filter benchmark across branches",
        x = "Scenario",
        y = "Elapsed (ms)") +
   theme_bw() +
