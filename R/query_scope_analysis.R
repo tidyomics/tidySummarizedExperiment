@@ -60,6 +60,46 @@ analyze_query_scope_mutate <- function(se, ...) {
   # Analyze query complexity
   complexity_analysis <- analyze_query_complexity(se, dots)
   
+  # Try dependency analysis first - this can detect mixed operations
+  dependency_result <- analyze_expression_dependencies(se, dots)
+  
+  # If dependency analysis detects mixed scope, use it directly
+  if (dependency_result$overall_scope == "mixed") {
+    return(list(
+      scope = "mixed",
+      targets_coldata = any(sapply(dependency_result$expression_dependencies, function(x) x$uses_coldata)),
+      targets_rowdata = any(sapply(dependency_result$expression_dependencies, function(x) x$uses_rowdata)),
+      targets_assays = any(sapply(dependency_result$expression_dependencies, function(x) x$uses_assays)),
+      new_coldata_cols = character(0),  # Cannot determine without execution
+      new_rowdata_cols = character(0),  # Cannot determine without execution
+      new_assay_cols = character(0),    # Cannot determine without execution
+      analysis_method = "dependency_analysis",
+      confidence = "high",
+      query_complexity = if (complexity_analysis$is_simple) "simple" else "complex",
+      column_names = .cols,
+      expression_dependencies = dependency_result$expression_dependencies
+    ))
+  }
+  
+  # If dependency analysis gives a clear single scope, use it
+  if (dependency_result$overall_scope %in% c("coldata_only", "rowdata_only", "assay_only")) {
+    return(list(
+      scope = dependency_result$overall_scope,
+      targets_coldata = dependency_result$overall_scope == "coldata_only",
+      targets_rowdata = dependency_result$overall_scope == "rowdata_only",
+      targets_assays = dependency_result$overall_scope == "assay_only",
+      new_coldata_cols = character(0),  # Cannot determine without execution
+      new_rowdata_cols = character(0),  # Cannot determine without execution
+      new_assay_cols = character(0),    # Cannot determine without execution
+      analysis_method = "dependency_analysis",
+      confidence = "high",
+      query_complexity = if (complexity_analysis$is_simple) "simple" else "complex",
+      column_names = .cols,
+      expression_dependencies = dependency_result$expression_dependencies
+    ))
+  }
+  
+  # Fall back to existing analysis methods if dependency analysis is inconclusive
   # Choose analysis strategy based on complexity
   if (complexity_analysis$is_simple) {
     # Simple query - try pre-mutate analysis first
@@ -718,6 +758,112 @@ analyze_query_complexity <- function(se, dots) {
   return(list(
     is_simple = is_simple,
     complexity_reasons = complexity_reasons
+  ))
+}
+
+#' Analyze expression dependencies to detect mixed scope operations
+#'
+#' This function examines the variables referenced in mutate expressions
+#' to determine if they span multiple data types (assays, colData, rowData).
+#'
+#' @keywords internal
+#' @param se A SummarizedExperiment object
+#' @param dots List of quosures from mutate expressions
+#' @return List with dependency analysis results
+#' @noRd
+analyze_expression_dependencies <- function(se, dots) {
+  
+  # Get available column names from each data type
+  coldata_cols <- colnames(colData(se))
+  rowdata_cols <- if (.hasSlot(se, "rowData") || .hasSlot(se, "elementMetadata")) {
+    colnames(rowData(se))
+  } else {
+    character(0)
+  }
+  assay_cols <- assayNames(se)
+  
+  # Analyze each expression
+  expression_deps <- list()
+  
+  for (i in seq_along(dots)) {
+    expr_name <- names(dots)[i]
+    if (is.null(expr_name) || expr_name == "") {
+      expr_name <- paste0("expr_", i)
+    }
+    
+    # Extract variable names from the expression
+    expr_text <- rlang::quo_text(dots[[i]])
+    
+    # Find which variables are referenced
+    # Use a simple approach: check which column names appear as whole words
+    uses_coldata <- if (length(coldata_cols) > 0) {
+      any(sapply(coldata_cols, function(col) {
+        grepl(paste0("\\b", col, "\\b"), expr_text)
+      }, USE.NAMES = FALSE))
+    } else {
+      FALSE
+    }
+    
+    uses_rowdata <- if (length(rowdata_cols) > 0) {
+      any(sapply(rowdata_cols, function(col) {
+        grepl(paste0("\\b", col, "\\b"), expr_text)
+      }, USE.NAMES = FALSE))
+    } else {
+      FALSE
+    }
+    
+    uses_assays <- if (length(assay_cols) > 0) {
+      any(sapply(assay_cols, function(col) {
+        grepl(paste0("\\b", col, "\\b"), expr_text)
+      }, USE.NAMES = FALSE))
+    } else {
+      FALSE
+    }
+    
+    # Count dependency types
+    n_dep_types <- sum(uses_coldata, uses_rowdata, uses_assays)
+    
+    # Determine scope for this expression
+    expr_scope <- if (n_dep_types == 0) {
+      "unknown"
+    } else if (n_dep_types == 1) {
+      if (uses_coldata) "coldata_only"
+      else if (uses_rowdata) "rowdata_only"
+      else "assay_only"
+    } else {
+      "mixed"
+    }
+    
+    expression_deps[[expr_name]] <- list(
+      scope = expr_scope,
+      uses_coldata = uses_coldata,
+      uses_rowdata = uses_rowdata,
+      uses_assays = uses_assays,
+      expression_text = expr_text,
+      referenced_coldata = if (length(coldata_cols) > 0) coldata_cols[sapply(coldata_cols, function(col) grepl(paste0("\\b", col, "\\b"), expr_text), USE.NAMES = FALSE)] else character(0),
+      referenced_rowdata = if (length(rowdata_cols) > 0) rowdata_cols[sapply(rowdata_cols, function(col) grepl(paste0("\\b", col, "\\b"), expr_text), USE.NAMES = FALSE)] else character(0),
+      referenced_assays = if (length(assay_cols) > 0) assay_cols[sapply(assay_cols, function(col) grepl(paste0("\\b", col, "\\b"), expr_text), USE.NAMES = FALSE)] else character(0)
+    )
+  }
+  
+  # Determine overall scope based on all expressions
+  all_scopes <- sapply(expression_deps, function(x) x$scope)
+  has_mixed <- any(all_scopes == "mixed")
+  unique_scopes <- unique(all_scopes[all_scopes != "unknown"])
+  
+  overall_scope <- if (has_mixed || length(unique_scopes) > 1) {
+    "mixed"
+  } else if (length(unique_scopes) == 1) {
+    unique_scopes[1]
+  } else {
+    "unknown"
+  }
+  
+  return(list(
+    overall_scope = overall_scope,
+    expression_dependencies = expression_deps,
+    analysis_method = "dependency_analysis",
+    confidence = "high"
   ))
 }
 
