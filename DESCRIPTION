@@ -40,7 +40,8 @@ Imports:
     cli,
     fansi,
     stats,
-    pkgconfig
+    pkgconfig,
+    plyxp
 Suggests:
     BiocStyle,
     testthat,

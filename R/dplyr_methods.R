@@ -400,114 +400,8 @@ summarise.SummarizedExperiment <- function(.data, ...) {
 #' @export
 summarize.SummarizedExperiment <- summarise.SummarizedExperiment
 
-# Simple helper function for assay-only mutations
-mutate_assay <- function(.data, ...) {
-    # Get the mutation expressions
-    dots <- enquos(...)
-    
-    # For each new assay column, add it directly to assays
-    for (i in seq_along(dots)) {
-        new_assay_name <- names(dots)[i]
-        expr <- dots[[i]]
-        
-        # Evaluate the expression to create the new assay
-        # This assumes the expression references existing assay names
-        new_assay_data <- rlang::eval_tidy(expr, data = as.list(assays(.data)))
-        
-        # Add the new assay
-        assays(.data)[[new_assay_name]] <- new_assay_data
-    }
-    
-    return(.data)
-}
-
-# Internal helper: perform mutate via tibble conversion and map back to SE
-mutate_via_tibble <- function(.data, ...) {
-    # Check that we are not modifying a key column
-    cols <- enquos(...) |> names()
-    
-    # Deprecation of special column names
-    .cols <- enquos(..., .ignore_empty="all") %>% 
-        map(~ quo_name(.x)) %>% unlist()
-    if (is_sample_feature_deprecated_used(.data, .cols)) {
-        .data <- ping_old_special_column_into_metadata(.data)
-    }
-    
-    special_columns <- get_special_columns(
-        # Decrease the size of the dataset
-        .data[1:min(100, nrow(.data)), 1:min(20, ncol(.data))]
-    ) |> c(get_needed_columns(.data))
-    
-    tst <-
-        intersect(
-            cols,
-            special_columns
-        ) |> 
-        length() |>
-        gt(0)
-    
-    if (tst) {
-        columns <-
-            special_columns |>
-                paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
-            columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
-    }
-    
-    # If Ranges column not in query perform fast as_tibble
-    skip_GRanges <-
-        get_GRanges_colnames() %in% 
-        cols |>
-        not()
-    
-    return(.data |>
-        as_tibble(skip_GRanges=skip_GRanges) |>
-        dplyr::mutate(...) |>
-        update_SE_from_tibble(.data))
-}
-
-#' @name mutate
-#' @rdname mutate
-#' @inherit dplyr::mutate
-#' @family single table verbs
-#'
-#' @examples
-#' data(pasilla)
-#' pasilla |> mutate(logcounts=log2(counts))
-#'
-#' @importFrom rlang enquos
-#' @importFrom dplyr mutate
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @importFrom purrr map
-#' @export
-mutate.SummarizedExperiment <- function(.data, ...) {
-
-       # Check if query is composed (multiple expressions)
-    if (is_composed("mutate", ...)) return(substitute_decompose("mutate", ...)(.data))
- 
-        # Check for scope and dispatch elegantly
-        scope_report <- analyze_query_scope_mutate(.data, ...)
-        scope <- scope_report$scope
-        result <- dplyr::case_when(
-            scope == "coldata_only" ~ list(modify_samples(.data, "mutate", ...)),
-            scope == "rowdata_only" ~ list(modify_features(.data, "mutate", ...)),
-            scope == "assay_only"   ~ list(mutate_assay(.data, ...)),
-            scope == "mixed"        ~ list(modify_se_plyxp(.data, "mutate", scope_report, ...)),
-            TRUE                     ~ list(mutate_via_tibble(.data, ...))
-        )[[1]]
-        return(result)
 
 
-}
 
 
 
@@ -535,7 +429,7 @@ rename.SummarizedExperiment <- function(.data, ...) {
 
     # Check if query is composed (multiple expressions)
     if (is_composed("rename", ...)) {
-        return(substitute_decompose("rename", ...)(.data))
+        return(decompose_tidy_operation("rename", ...)(.data))
     }
 
     # Analyze the scope of the rename operation

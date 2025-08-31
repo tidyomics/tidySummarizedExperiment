@@ -1379,3 +1379,20 @@ reduce_rbind_se <- function(se_list){
   # Return
   se
 }
+
+
+# Helper function to convert tibble back to DataFrame with rownames
+DataFrame_rownames <- function(data, rownames_col = "rowname__") {
+  if (rownames_col %in% colnames(data)) {
+    # Extract rownames and remove the rownames column
+    row_names <- data[[rownames_col]]
+    data_without_rownames <- data[, colnames(data) != rownames_col, drop = FALSE]
+    
+    # Convert to DataFrame with rownames
+    result <- DataFrame(data_without_rownames, row.names = row_names)
+    return(result)
+  } else {
+    # No rownames column, just convert to DataFrame
+    return(as(data, "DataFrame"))
+  }
+}
