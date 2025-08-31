@@ -1027,6 +1027,22 @@ analyze_dplyr_operation_scope <- function(se, operation, ...) {
 
 
 
+# Helper function to convert tibble back to DataFrame with rownames
+DataFrame_rownames <- function(data, rownames_col = "rowname__") {
+  if (rownames_col %in% colnames(data)) {
+    # Extract rownames and remove the rownames column
+    row_names <- data[[rownames_col]]
+    data_without_rownames <- data[, colnames(data) != rownames_col, drop = FALSE]
+    
+    # Convert to DataFrame with rownames
+    result <- DataFrame(data_without_rownames, row.names = row_names)
+    return(result)
+  } else {
+    # No rownames column, just convert to DataFrame
+    return(as(data, "DataFrame"))
+  }
+}
+
 #' Apply any dplyr operation to feature metadata (rowData)
 #'
 #' This is a general function that allows applying any dplyr operation
@@ -1068,9 +1084,9 @@ modify_features <- function(.data, operation, ...) {
   
   # Apply the operation to rowData
   modified_rowdata <- rowData(.data) |>
-    tibble::as_tibble() |>
+    tibble::as_tibble(rownames = "rowname__") |>
     dplyr_fn(...) |>
-    as("DataFrame")
+    DataFrame_rownames()
   
   # Handle operations that might change the number of features
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
@@ -1078,7 +1094,7 @@ modify_features <- function(.data, operation, ...) {
     # We need to subset the entire SE object accordingly
     
     # Get the row indices that remain after the operation
-    original_rowdata <- rowData(.data) |> tibble::as_tibble()
+    original_rowdata <- rowData(.data) |> tibble::as_tibble(rownames = "rowname__")
     original_rowdata$.original_index <- seq_len(nrow(original_rowdata))
     
     filtered_with_index <- original_rowdata |>
@@ -1091,7 +1107,7 @@ modify_features <- function(.data, operation, ...) {
     # Update rowData with the modified version (without the index column)
     rowData(result_se) <- filtered_with_index |>
       dplyr::select(-.original_index) |>
-      as("DataFrame")
+      DataFrame_rownames()
     
     return(result_se)
     
@@ -1143,9 +1159,9 @@ modify_samples <- function(.data, operation, ...) {
   
   # Apply the operation to colData
   modified_coldata <- colData(.data) |>
-    tibble::as_tibble() |>
+    tibble::as_tibble(rownames = "rowname__") |>
     dplyr_fn(...) |>
-    as("DataFrame")
+    DataFrame_rownames()
   
   # Handle operations that might change the number of samples
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
@@ -1153,7 +1169,7 @@ modify_samples <- function(.data, operation, ...) {
     # We need to subset the entire SE object accordingly
     
     # Get the row indices that remain after the operation
-    original_coldata <- colData(.data) |> tibble::as_tibble()
+    original_coldata <- colData(.data) |> tibble::as_tibble(rownames = "rowname__")
     original_coldata$.original_index <- seq_len(nrow(original_coldata))
     
     filtered_with_index <- original_coldata |>
@@ -1166,7 +1182,8 @@ modify_samples <- function(.data, operation, ...) {
     # Update colData with the modified version (without the index column)
     colData(result_se) <- filtered_with_index |>
       dplyr::select(-.original_index) |>
-      as("DataFrame")
+      DataFrame_rownames() 
+
     
     return(result_se)
     
