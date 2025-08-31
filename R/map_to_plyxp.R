@@ -57,10 +57,25 @@ modify_se_plyxp <- function(.data, operation, scope_report, ...) {
   dots <- rlang::enquos(...)
   converted_dots <- list()
   
-  for (i in seq_along(dots)) {
-    expr_name <- names(dots)[i]
+  # Separate additional args (start with a dot), e.g., .preserve in filter
+  dot_names <- names(dots)
+  additional_args <- list()
+  main_dots_idx <- seq_along(dots)
+  if (!is.null(dot_names)) {
+    for (i in seq_along(dots)) {
+      nm <- dot_names[i]
+      if (!is.null(nm) && nzchar(nm) && startsWith(nm, ".")) {
+        additional_args[[nm]] <- dots[[i]]
+        main_dots_idx <- setdiff(main_dots_idx, i)
+      }
+    }
+  }
+  main_dots <- dots[main_dots_idx]
+  
+  for (k in seq_along(main_dots)) {
+    expr_name <- names(main_dots)[k]
     if (is.null(expr_name) || expr_name == "") {
-      expr_name <- paste0("expr_", i)
+      expr_name <- paste0("expr_", k)
     }
     
     # Get dependency info for this expression
@@ -77,13 +92,13 @@ modify_se_plyxp <- function(.data, operation, scope_report, ...) {
       )
       
       # Create new quosure with converted expression
-      converted_dots[[i]] <- rlang::quo(!!rlang::parse_expr(converted_text))
-      names(converted_dots)[i] <- expr_name
+      converted_dots[[k]] <- rlang::quo(!!rlang::parse_expr(converted_text))
+      names(converted_dots)[k] <- expr_name
       
     } else {
       # No dependency info, keep original
-      converted_dots[[i]] <- dots[[i]]
-      names(converted_dots)[i] <- expr_name
+      converted_dots[[k]] <- main_dots[[k]]
+      names(converted_dots)[k] <- expr_name
     }
   }
   
@@ -95,7 +110,7 @@ modify_se_plyxp <- function(.data, operation, scope_report, ...) {
 
   # 2) Execute the operation call constructed via call2
   #    e.g., mutate(.data, newdata = data * .cols$x)
-  op_call <- rlang::call2(rlang::sym(operation), rlang::sym(".data"), !!!converted_dots)
+  op_call <- rlang::call2(rlang::sym(operation), rlang::sym(".data"), !!!converted_dots, !!!additional_args)
   .data <- rlang::eval_tidy(op_call, env = rlang::env(.data = .data))
 
   # 3) Convert back to SummarizedExperiment

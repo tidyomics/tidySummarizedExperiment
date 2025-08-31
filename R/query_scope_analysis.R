@@ -361,6 +361,52 @@ analyze_query_scope_post_operation <- function(se, .cols, .data_modified, operat
 }
 
 
+#' Analyze the scope of a filter query to determine target data types
+#'
+#' This function analyzes a filter query to determine whether it targets:
+#' - Only colData (sample metadata)
+#' - Only rowData (feature metadata)
+#' - Only assays (expression/count data)
+#' - Mixed operations (combination of the above)
+#'
+#' @keywords internal
+#' @param se A SummarizedExperiment object
+#' @param ... Filter expressions (same as dplyr::filter)
+#' @return A list containing scope information and expression dependencies
+#' @noRd
+analyze_query_scope_filter <- function(se, ...) {
+  
+  # Capture the filter expressions
+  dots <- rlang::enquos(...)
+  
+  # If no predicates provided, scope is unknown (no-op)
+  if (length(dots) == 0) {
+    return(list(
+      scope = "unknown",
+      targets_coldata = FALSE,
+      targets_rowdata = FALSE,
+      targets_assays = FALSE,
+      analysis_method = "no_predicates",
+      confidence = "low",
+      expression_dependencies = list()
+    ))
+  }
+  
+  # Use dependency analysis to infer scope
+  dependency_result <- analyze_expression_dependencies(se, dots)
+  
+  return(list(
+    scope = dependency_result$overall_scope,
+    targets_coldata = any(sapply(dependency_result$expression_dependencies, function(x) x$uses_coldata)),
+    targets_rowdata = any(sapply(dependency_result$expression_dependencies, function(x) x$uses_rowdata)),
+    targets_assays = any(sapply(dependency_result$expression_dependencies, function(x) x$uses_assays)),
+    analysis_method = dependency_result$analysis_method,
+    confidence = dependency_result$confidence,
+    expression_dependencies = dependency_result$expression_dependencies
+  ))
+}
+
+
 #' Apply any dplyr operation to feature metadata (rowData)
 #'
 #' This is a general function that allows applying any dplyr operation

@@ -268,43 +268,26 @@ filter.SummarizedExperiment <- function(.data, ..., .preserve=FALSE) {
     if (is_sample_feature_deprecated_used(.data, .cols)) {
         .data <- ping_old_special_column_into_metadata(.data)
     }
-  
-    # Understand what the filtering is about
-    is_filter_from_samples <- .data |>
-        colData() |>
-        as_tibble() |> 
-        is_filer_columns_in_column_selection(...)
 
-    is_filter_from_features <- .data |>
-        rowData() |>
-        as_tibble() |> 
-        is_filer_columns_in_column_selection(...)
-  
-    # Get the simpler route if filter is only on samples
-    if (is_filter_from_samples & !is_filter_from_features){
-        filtered_samples <- 
-            colData(.data) |> 
-            as_tibble(rownames=s_(.data)$name) |> 
-            dplyr::filter(..., .preserve=.preserve) |> 
-            pull(!!s_(.data)$symbol)
-    
-        return(.data[,filtered_samples])
-    } else if (!is_filter_from_samples & is_filter_from_features) {
-    # Get the simpler route if filter is only on features
-        filtered_features <- rowData(.data) |> 
-            as_tibble(rownames=f_(.data)$name) |> 
-            dplyr::filter(..., .preserve=.preserve) |> 
-            pull(!!f_(.data)$symbol)
-    
-        return(.data[filtered_features,])
-    } else {
-    # If filtering is based on both features and samples
-    # Do filtering
-    new_meta <- .data |>
-        as_tibble(skip_GRanges=TRUE) |>
-        dplyr::filter(..., .preserve=.preserve)
-    
-        # If data cannot be a SummarizedExperiment
+    # Decompose composed queries (multiple predicates)
+    if (is_composed("filter", ...)) {
+        return(decompose_tidy_operation("filter", ..., .preserve = .preserve)(.data))
+    }
+
+    # Analyze scope and dispatch
+    scope_report <- analyze_query_scope_filter(.data, ...)
+    scope <- scope_report$scope
+
+    result <-
+    if (scope == "coldata_only") modify_samples(.data, "filter", ..., .preserve = .preserve)
+    else if (scope == "rowdata_only") modify_features(.data, "filter", ..., .preserve = .preserve)
+    else if (scope == "mixed") modify_se_plyxp(.data, "filter", scope_report, ..., .preserve = .preserve)
+    else {
+        # Fallback: perform via tibble and map back if rectangular
+        new_meta <- .data |>
+            as_tibble(skip_GRanges=TRUE) |>
+            dplyr::filter(..., .preserve=.preserve)
+
         if (!is_rectangular(new_meta, .data)) {
             message("tidySummarizedExperiment says:",
                 " The resulting data frame is not rectangular",
@@ -312,12 +295,20 @@ filter.SummarizedExperiment <- function(.data, ..., .preserve=FALSE) {
                 " for independent data analysis.")
             return(new_meta)
         } else {
-            return(.data[  
+            .data[  
                 unique(pull(new_meta,!!f_(.data)$symbol)), 
                 unique(pull(new_meta,!!s_(.data)$symbol)) 
-            ])
+            ]
         }
-    }  
+    }
+
+    # Record latest filter scope into metadata for testing/introspection
+    meta <- S4Vectors::metadata(result)
+    if (is.null(meta)) meta <- list()
+    meta$latest_filter_scope_report <- scope_report
+    S4Vectors::metadata(result) <- meta
+
+    return(result)
 }
 
 #' @name group_by
