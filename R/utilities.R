@@ -430,7 +430,7 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
         
         # Create correct list
         pull(data___) %>%
-        reduce(c) 
+        reduce(c)
     )
   
   # return
