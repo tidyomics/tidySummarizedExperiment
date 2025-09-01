@@ -16,6 +16,8 @@ output:
     number_sections: yes
     fig_caption: yes
     df_print: paged
+params:
+  use_cache: true
 vignette: >
   %\VignetteIndexEntry{Speed-up `tidySummarizedExperiment` with `plyxp`}
   %\VignetteEngine{knitr::rmarkdown}
@@ -173,22 +175,31 @@ ensure_worktree(branch_b_ref, wt_b)
 ### Run benchmarks on both branches
 
 ```{r run_benchmarks, cache=TRUE}
-# Branch A
-load_branch_code(wt_a)
-init_a <- function() suppressMessages(devtools::load_all(wt_a, quiet = TRUE))
-res_a <- run_all_scenarios_parallel(branch_label = "master", reps = 20L, workers = 8L, initializer = init_a)
+use_cache <- isTRUE(params$use_cache)
+cache_file <- normalizePath("benchmark_results.rda", mustWork = FALSE)
 
-# Branch B
-load_branch_code(wt_b)
-init_b <- function() suppressMessages(devtools::load_all(wt_b, quiet = TRUE))
-res_b <- run_all_scenarios_parallel(branch_label = "query-to-slot-routines", reps = 20L, workers = 1L, initializer = init_b)
+if (use_cache && file.exists(cache_file)) {
+  load(cache_file, envir = environment())
+} else {
+  # Branch A
+  load_branch_code(wt_a)
+  init_a <- function() suppressMessages(devtools::load_all(wt_a, quiet = TRUE))
+  res_a <- run_all_scenarios_parallel(branch_label = "master", reps = 20L, workers = 8L, initializer = init_a)
 
-results <- dplyr::bind_rows(res_a, res_b) %>%
-  dplyr::mutate(operation = dplyr::case_when(
-    grepl("^filter", scenario) ~ "filter",
-    grepl("^select", scenario) ~ "select",
-    TRUE ~ "mutate"
-  ))
+  # Branch B
+  load_branch_code(wt_b)
+  init_b <- function() suppressMessages(devtools::load_all(wt_b, quiet = TRUE))
+  res_b <- run_all_scenarios_parallel(branch_label = "query-to-slot-routines", reps = 20L, workers = 1L, initializer = init_b)
+
+  results <- dplyr::bind_rows(res_a, res_b) %>%
+    dplyr::mutate(operation = dplyr::case_when(
+      grepl("^filter", scenario) ~ "filter",
+      grepl("^select", scenario) ~ "select",
+      TRUE ~ "mutate"
+    ))
+
+  save(results, file = cache_file)
+}
 
 summary_table <- results %>%
   group_by(branch, scenario) %>%
@@ -199,6 +210,8 @@ summary_table
 ```
 
 ### Visualise with ggplot boxplots
+
+We cap at 1 second to avoid 
 
 ```{r plot, fig.width=10, fig.height=8}
 dodge_w <- 0.7
