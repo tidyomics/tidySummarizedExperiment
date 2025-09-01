@@ -2,8 +2,8 @@
 #' @rdname bind_rows
 #' @inherit ttservice::bind_rows
 #' @param add.cell.ids Appends the corresponding values to
-#' @noRd
 #' @importFrom rlang dots_values
+#' @importFrom tidyselect all_of
 #' @importFrom rlang flatten_if
 #' @importFrom rlang is_spliced
 #' @importFrom SummarizedExperiment cbind

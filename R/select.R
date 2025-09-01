@@ -62,6 +62,8 @@ analyze_query_scope_select <- function(se, ...) {
 #' 
 #' @importFrom SummarizedExperiment colData
 #' @importFrom dplyr select
+#' @importFrom tidyselect all_of
+#' @importFrom tidyselect any_of
 #' @export
 select.SummarizedExperiment <- function(.data, ...) {
    

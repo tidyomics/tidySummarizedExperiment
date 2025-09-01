@@ -248,7 +248,6 @@ get_abundance_sc_wide <- function(.data, transcripts = NULL, all = FALSE) {
 #' @importFrom magrittr "%$%"
 #' @importFrom tidyr pivot_longer
 #' @importFrom tibble as_tibble
-#' @importFrom purrr when
 #' @importFrom purrr map2
 #' @importFrom SummarizedExperiment assays
 #'
@@ -340,6 +339,7 @@ get_abundance_sc_long <- function(.data, transcripts = NULL, all = FALSE,
 
 #' @importFrom methods .hasSlot
 #' @importFrom S4Vectors DataFrame
+#' @importFrom stats setNames
 #' @importFrom SummarizedExperiment colData
 #' @importFrom SummarizedExperiment rowData
 #' @importFrom SummarizedExperiment colData<-
@@ -771,7 +771,6 @@ quo_names <- function(v) {
     unlist()
 }
 
-#' @importFrom purrr when
 #' @importFrom dplyr select
 #' @importFrom rlang expr
 #' @importFrom tidyselect eval_select

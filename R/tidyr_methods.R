@@ -33,7 +33,6 @@ unnest.tidySummarizedExperiment_nested <- function(data, cols, ...,
 #'     unnest_summarized_experiment(data)
 #' 
 #' @importFrom tidyr unnest
-#' @importFrom purrr when
 #' @importFrom rlang quo_name
 #' @importFrom purrr imap
 #' @importFrom purrr map_lgl
@@ -208,7 +207,9 @@ unnest_summarized_experiment <- function(data, cols, ...,
 #'     
 #' @importFrom rlang enquos
 #' @importFrom rlang :=
-#' @importFrom purrr when
+#' @importFrom tidyselect all_of
+#' @importFrom tidyselect any_of
+#' @importFrom stats setNames
 #' @importFrom purrr pmap
 #' @importFrom tidyr nest
 #' @references

@@ -84,6 +84,7 @@ Load libraries used in the examples.
 
 ```{r}
 library(ggplot2)
+library(dplyr)
 library(tidySummarizedExperiment)
 ```
 

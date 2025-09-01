@@ -1,4 +1,3 @@
-#' @importFrom purrr when
 #' Analyze scope of join keys (sample vs feature) for joins
 #'
 #' @keywords internal
@@ -34,8 +33,7 @@ analyze_query_scope_join <- function(se, join_keys) {
   )
 }
 
-#' @importFrom purrr when
-join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE, 
+join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
                                   suffix = c(".x", ".y"), join_function, 
                                   force_tibble_route = FALSE,
                                   ...) {
