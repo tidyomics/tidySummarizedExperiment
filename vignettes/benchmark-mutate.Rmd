@@ -98,7 +98,14 @@ benchmark_scenarios <- function() {
     # Filter benchmarks (scoped and non-rectangular)
     filter_coldata_simple = quo({ se %>% filter(dex == "trt") }),
     filter_coldata_numeric = quo({ se %>% filter(avgLength > median(avgLength)) }),
-    filter_assay_nonrect = quo({ se %>% filter(counts > 0) })
+    filter_assay_nonrect = quo({ se %>% filter(counts > 0) }),
+
+    # Select benchmarks (covering colData-only, rowData-only, assays-only, mixed)
+    select_coldata_simple = quo({ se %>% select(.sample, dex) }),
+    select_rowdata_simple = quo({ se %>% select(.feature) }),
+    select_assay_only = quo({ se %>% select(counts) }),
+    select_mixed_keys_counts = quo({ se %>% select(.sample, .feature, counts) }),
+    select_coldata_wide = quo({ se %>% select(.sample, dex, avgLength, SampleName) })
   )
 }
 
@@ -177,7 +184,11 @@ init_b <- function() suppressMessages(devtools::load_all(wt_b, quiet = TRUE))
 res_b <- run_all_scenarios_parallel(branch_label = "query-to-slot-routines", reps = 20L, workers = 1L, initializer = init_b)
 
 results <- dplyr::bind_rows(res_a, res_b) %>%
-  dplyr::mutate(operation = ifelse(grepl("^filter", scenario), "filter", "mutate"))
+  dplyr::mutate(operation = dplyr::case_when(
+    grepl("^filter", scenario) ~ "filter",
+    grepl("^select", scenario) ~ "select",
+    TRUE ~ "mutate"
+  ))
 
 summary_table <- results %>%
   group_by(branch, scenario) %>%
@@ -205,7 +216,7 @@ ggplot(results, aes(x = scenario, y = elapsed_ms, fill = branch)) +
   coord_flip() +
   facet_grid(operation ~ ., scales = "free_y", space = "free_y") +
   annotation_logticks(sides = "b") +
-  labs(title = "Mutate and Filter benchmark across branches",
+  labs(title = "Mutate, Filter, and Select benchmark across branches",
        x = "Scenario",
        y = "Elapsed (ms)") +
   theme_bw() +
