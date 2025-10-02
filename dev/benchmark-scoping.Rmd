@@ -242,3 +242,5 @@ ggplot(results, aes(x = scenario, y = elapsed_ms, fill = branch)) +
 ```{r sessionInfo}
 sessionInfo()
 ```
+
+
