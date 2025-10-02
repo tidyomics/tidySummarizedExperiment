@@ -152,7 +152,7 @@ We could use `rename` to rename a column. For example, to modify the type column
 
 ```{r}
 pasilla_tidy %>%
-    rename(sequencing=type)
+    dplyr::rename(sequencing=type)
 ```
 
 We could use `mutate` to create a column. For example, we could create a new type column that contains single
