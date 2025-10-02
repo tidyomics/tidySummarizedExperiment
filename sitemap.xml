@@ -6,6 +6,7 @@
 <url><loc>/index.html</loc></url>
 <url><loc>/reference/append_samples.html</loc></url>
 <url><loc>/reference/as_tibble.html</loc></url>
+<url><loc>/reference/bind_rows.html</loc></url>
 <url><loc>/reference/count.html</loc></url>
 <url><loc>/reference/distinct.html</loc></url>
 <url><loc>/reference/extract.html</loc></url>
@@ -18,8 +19,6 @@
 <url><loc>/reference/inner_join.html</loc></url>
 <url><loc>/reference/left_join.html</loc></url>
 <url><loc>/reference/mutate.html</loc></url>
-<url><loc>/reference/mutate_features.html</loc></url>
-<url><loc>/reference/mutate_samples.html</loc></url>
 <url><loc>/reference/nest.html</loc></url>
 <url><loc>/reference/pasilla.html</loc></url>
 <url><loc>/reference/pipe.html</loc></url>
