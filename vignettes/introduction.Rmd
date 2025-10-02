@@ -139,7 +139,7 @@ We can use `count` to count how many rows we have for each sample.
 
 ```{r}
 pasilla_tidy %>%
-    count(.sample)
+    dplyr::count(.sample)
 ```
 
 We can use `distinct` to see what distinct sample information we have.
