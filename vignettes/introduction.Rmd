@@ -25,14 +25,13 @@ vignette: >
 
 **Brings SummarizedExperiment to the tidyverse!**
 
-website: [stemangiola.github.io/tidySummarizedExperiment/](https://stemangiola.github.io/tidySummarizedExperiment/)
+website: [stemangiola.github.io/tidySummarizedExperiment/](https://tidyomics.github.io/tidySummarizedExperiment/)
 
 Please also have a look at
 
-- [tidySingleCellExperiment](https://stemangiola.github.io/tidySingleCellExperiment/) for tidy manipulation of SingleCellExperiment objects
+- [tidySingleCellExperiment](https://tidyomics.github.io/tidySingleCellExperiment/) for tidy manipulation of SingleCellExperiment objects
 - [tidyseurat](https://stemangiola.github.io/tidyseurat/) for tidy manipulation of Seurat objects
 - [tidybulk](https://stemangiola.github.io/tidybulk/) for tidy analysis of RNA sequencing data
-- [nanny](https://github.com/stemangiola/nanny) for tidy high-level data analysis and manipulation
 - [tidygate](https://github.com/stemangiola/tidygate) for adding custom gate information to your tibble
 - [tidyHeatmap](https://stemangiola.github.io/tidyHeatmap/) for heatmaps produced with tidy principles
 
