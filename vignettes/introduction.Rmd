@@ -77,7 +77,7 @@ BiocManager::install("tidySummarizedExperiment")
 
 From Github (development)
 ```{r, eval=FALSE}
-devtools::install_github("stemangiola/tidySummarizedExperiment")
+remotes::install_github("stemangiola/tidySummarizedExperiment")
 ```
 
 Load libraries used in the examples.
@@ -118,7 +118,7 @@ We can use `slice` to choose rows by position, for example to choose the first r
 
 ```{r}
 pasilla_tidy %>%
-    slice(1)
+    dplyr::slice(1)
 ```
 
 We can use `filter` to choose rows by criteria.
