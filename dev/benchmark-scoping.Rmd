@@ -1,0 +1,246 @@
+---
+
+title: "Speed-up `tidySummarizedExperiment` with `plyxp`"
+
+author: "Stefano Mangiola"
+
+contributors:
+  - Michael Love
+  - Justin Landis
+
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    toc: yes
+    toc_depth: 2
+    number_sections: yes
+    fig_caption: yes
+    df_print: paged
+params:
+  use_cache: true
+vignette: >
+  %\VignetteIndexEntry{Speed-up `tidySummarizedExperiment` with `plyxp`}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+### Motivation and design principles
+
+This benchmark supports ongoing work to improve mutate() execution paths, including exploring plyxp-backed execution for mixed-slot operations (see issue: [Attempt using plyxp for some cases in tidySummarizedExperiment](https://github.com/tidyomics/genomics-todos/issues/19)). The current proposal is grounded in three principles:
+
+- Decompose operation series: break `mutate(a=..., b=..., c=...)` into single operations for simpler handling and clearer routing. Reference implementation in `R/mutate.R` (decomposition step) at [L146](https://github.com/tidyomics/tidySummarizedExperiment/blob/92072d71f9d3b9a82cfc5fdced8e52477c44d80f/R/mutate.R#L146).
+- Analyze scope: infer whether each expression targets `colData`, `rowData`, `assays`, or a mix (noting that the current analyser is likely over-engineered and could be simplified). See [L149](https://github.com/tidyomics/tidySummarizedExperiment/blob/92072d71f9d3b9a82cfc5fdced8e52477c44d80f/R/mutate.R#L149).
+- Route mixed operations via plyxp: when an expression touches multiple slots, prefer the plyxp path for correctness and performance. See [L155](https://github.com/tidyomics/tidySummarizedExperiment/blob/92072d71f9d3b9a82cfc5fdced8e52477c44d80f/R/mutate.R#L155).
+
+These design choices aim to preserve dimnames, avoid unnecessary tibble round-trips, and provide predictable performance across simple and mixed-slot scenarios.
+
+### Overview
+
+This vignette benchmarks a set of mutate() scenarios on two branches of the repository, by explicitly checking out the branches via git worktree, loading each branch's code with devtools::load_all(), running the same scenarios multiple times, and comparing the runtimes with ggplot boxplots.
+
+- Branch A: origin/master
+- Branch B: origin/query-to-slot-routines
+
+Requirements: git, devtools, airway, dplyr, SummarizedExperiment, ggplot2.
+
+### Setup helper functions
+
+```{r helpers}
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(dplyr)
+  library(SummarizedExperiment)
+  library(rlang)
+  library(devtools)
+  library(airway)
+  library(microbenchmark)
+  library(future.apply)
+})
+
+ensure_worktree <- function(branch_ref, worktree_dir) {
+  cmd <- sprintf(
+    "sh -c 'git fetch origin --prune; git worktree remove -f %s >/dev/null 2>&1 || true; git worktree add --detach %s %s'",
+    shQuote(worktree_dir), shQuote(worktree_dir), shQuote(branch_ref)
+  )
+  status <- system(cmd)
+  if (status != 0) stop(sprintf("Failed to create worktree for %s", branch_ref))
+}
+
+load_branch_code <- function(worktree_dir) {
+  if (!requireNamespace("devtools", quietly = TRUE)) stop("Please install devtools to run this vignette.")
+  suppressMessages(devtools::load_all(worktree_dir, quiet = TRUE))
+}
+
+create_airway_test_se <- function() {
+  suppressPackageStartupMessages(library(airway))
+  data(airway)
+  se <- airway
+  se[1:200, ]
+}
+
+benchmark_scenarios <- function() {
+  list(
+    coldata_simple_assignment = quo({ se %>% mutate(new_dex = dex) }),
+    coldata_arithmetic = quo({ se %>% mutate(avgLength_plus_5 = avgLength + 5) }),
+    coldata_concat = quo({ se %>% mutate(sample_info = paste(cell, dex, SampleName, sep = "_")) }),
+    coldata_grouped_mean = quo({ se %>% group_by(dex) %>% mutate(avgLength_group_mean = mean(avgLength)) %>% ungroup() }),
+    assay_simple_assignment = quo({ se %>% mutate(counts_copy = counts) }),
+    assay_plus_one = quo({ se %>% mutate(counts_plus_1 = counts + 1) }),
+    assay_log = quo({ se %>% mutate(log_counts_manual = log2(counts + 1)) }),
+    complex_conditional_coldata = quo({ se %>% mutate(length_group = ifelse(avgLength > mean(avgLength), "longer", "shorter")) }),
+    complex_nested = quo({ se %>% mutate(complex_category = ifelse(dex == "trt" & avgLength > mean(avgLength), "treated_long", ifelse(dex == "untrt", "untreated", "other"))) }),
+    mixed_assay_coldata = quo({ se %>% mutate(new_counts = counts * avgLength) }),
+    multiple_simple_assay = quo({ se %>% mutate(normalized_counts = counts / 1000, sqrt_counts = sqrt(counts)) }),
+    chained_mutates = quo({ se %>% mutate(tmp = avgLength * 2) %>% mutate(flag = ifelse(tmp > mean(tmp), 1, 0)) }),
+
+    # Filter benchmarks (scoped and non-rectangular)
+    filter_coldata_simple = quo({ se %>% filter(dex == "trt") }),
+    filter_coldata_numeric = quo({ se %>% filter(avgLength > median(avgLength)) }),
+    filter_assay_nonrect = quo({ se %>% filter(counts > 0) }),
+
+    # Select benchmarks (covering colData-only, rowData-only, assays-only, mixed)
+    select_coldata_simple = quo({ se %>% select(.sample, dex) }),
+    select_rowdata_simple = quo({ se %>% select(.feature) }),
+    select_assay_only = quo({ se %>% select(counts) }),
+    select_mixed_keys_counts = quo({ se %>% select(.sample, .feature, counts) }),
+    select_coldata_wide = quo({ se %>% select(.sample, dex, avgLength, SampleName) })
+  )
+}
+
+run_one <- function(expr_quo, reps = 5L) {
+  se_base <- create_airway_test_se()
+  mb <- microbenchmark::microbenchmark(
+    eval_tidy(expr_quo),
+    times = reps,
+    setup = { se <- se_base },          # reuse the same input, avoid recreating inside the timed expr
+    control = list(warmup = 2L)
+  )
+  # microbenchmark returns nanoseconds; convert to milliseconds
+  as.numeric(mb$time) / 1e6
+}
+
+run_all_scenarios <- function(branch_label, reps = 7L) {
+  scenarios <- benchmark_scenarios()
+  out <- list()
+  for (nm in names(scenarios)) {
+    tms <- run_one(scenarios[[nm]], reps = reps)
+    out[[length(out) + 1L]] <- data.frame(
+      branch = branch_label,
+      scenario = nm,
+      replicate = seq_along(tms),
+      elapsed_ms = tms,
+      stringsAsFactors = FALSE
+    )
+  }
+  bind_rows(out)
+}
+
+# Parallel version: run each scenario on a separate worker
+run_all_scenarios_parallel <- function(branch_label, reps = 20L, workers = 1L, initializer = NULL) {
+  scenarios <- benchmark_scenarios()
+  nms <- names(scenarios)
+  old_plan <- future::plan()
+  on.exit(future::plan(old_plan), add = TRUE)
+  future::plan(future::multisession, workers = workers)
+  res <- future.apply::future_lapply(nms, function(nm) {
+    if (!is.null(initializer)) initializer()
+    tms <- run_one(scenarios[[nm]], reps = reps)
+    data.frame(
+      branch = branch_label,
+      scenario = nm,
+      replicate = seq_along(tms),
+      elapsed_ms = tms,
+      stringsAsFactors = FALSE
+    )
+  }, future.seed = TRUE)
+  dplyr::bind_rows(res)
+}
+```
+
+### Prepare explicit worktrees for both branches
+
+```{r worktrees, cache=TRUE}
+branch_a_ref <- "origin/master"
+branch_b_ref <- "origin/query-to-slot-routines"
+wt_a <- normalizePath("../tidySummarizedExperiment.__bench_master__", mustWork = FALSE)
+wt_b <- normalizePath("../tidySummarizedExperiment.__bench_query_to_slot__", mustWork = FALSE)
+ensure_worktree(branch_a_ref, wt_a)
+ensure_worktree(branch_b_ref, wt_b)
+```
+
+### Run benchmarks on both branches
+
+```{r run_benchmarks, cache=TRUE}
+use_cache <- isTRUE(params$use_cache)
+cache_file <- normalizePath("benchmark_results.rda", mustWork = FALSE)
+
+if (use_cache && file.exists(cache_file)) {
+  load(cache_file, envir = environment())
+} else {
+  # Branch A
+  load_branch_code(wt_a)
+  init_a <- function() suppressMessages(devtools::load_all(wt_a, quiet = TRUE))
+  res_a <- run_all_scenarios_parallel(branch_label = "master", reps = 20L, workers = 8L, initializer = init_a)
+
+  # Branch B
+  load_branch_code(wt_b)
+  init_b <- function() suppressMessages(devtools::load_all(wt_b, quiet = TRUE))
+  res_b <- run_all_scenarios_parallel(branch_label = "query-to-slot-routines", reps = 20L, workers = 1L, initializer = init_b)
+
+  results <- dplyr::bind_rows(res_a, res_b) %>%
+    dplyr::mutate(operation = dplyr::case_when(
+      grepl("^filter", scenario) ~ "filter",
+      grepl("^select", scenario) ~ "select",
+      TRUE ~ "mutate"
+    ))
+
+  save(results, file = cache_file)
+}
+
+summary_table <- results %>%
+  group_by(branch, scenario) %>%
+  summarise(median_ms = median(elapsed_ms), .groups = "drop") %>%
+  tidyr::pivot_wider(names_from = branch, values_from = median_ms)
+
+summary_table
+```
+
+### Visualise with ggplot boxplots
+
+We cap at 1 second to avoid 
+
+```{r plot, fig.width=10, fig.height=8}
+dodge_w <- 0.7
+
+ggplot(results, aes(x = scenario, y = elapsed_ms, fill = branch)) +
+  geom_boxplot(position = position_dodge(width = dodge_w), width = 0.7, outlier.shape = NA) +
+
+  # Add jittered points aligned with the dodged boxplots
+  geom_point(
+    position = position_jitterdodge(jitter.width = 0.1, jitter.height = 0, dodge.width = dodge_w), 
+    alpha = 0.6, 
+    size = 0.5
+  ) +
+  scale_y_log10() + 
+  coord_flip() +
+  facet_grid(operation ~ ., scales = "free_y", space = "free_y") +
+  annotation_logticks(sides = "b") +
+  labs(title = "Mutate, Filter, and Select benchmark across branches",
+       x = "Scenario",
+       y = "Elapsed (ms)") +
+  theme_bw() +
+  
+  # Angle x labels  
+  theme(legend.position = "top", axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+```{r sessionInfo}
+sessionInfo()
+```
+
+

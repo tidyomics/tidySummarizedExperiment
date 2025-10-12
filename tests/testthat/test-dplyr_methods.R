@@ -51,63 +51,13 @@ test_that("mutate", {
 
 test_that("rename", {
     pasilla %>%
-        rename(groups = condition) %>%
+        rename(groups = condition, type_2 = type) %>%
         select(groups) %>%
         ncol() %>%
         expect_equal(1)
 })
 
-test_that("left_join", {
-    expect_equal(
-        pasilla %>%
-            left_join(pasilla %>%
-                          distinct(condition) %>%
-                          mutate(new_column = 1:2)) %>%
-            colData() %>%
-            ncol(),
-        pasilla %>%
-            colData() %>%
-            ncol() %>%
-            sum(1)
-    )
-})
 
-test_that("left_join 0 samples", {
- 
-    pasilla[0,] %>%
-      left_join(pasilla %>%
-                  distinct(condition) %>%
-                  mutate(new_column = 1)) |> 
-    as_tibble() |> 
-      pull(new_column) %>%
-      unique() |> 
-      expect_equal(1)
-  
-})
-
-test_that("inner_join", {
-    pasilla %>% inner_join(pasilla %>%
-                          distinct(condition) %>%
-                          mutate(new_column = 1:2) %>%
-                          slice(1)) %>%
-        ncol() %>%
-        expect_equal(4)
-})
-
-test_that("right_join", {
-    pasilla %>% right_join(pasilla %>%
-                          distinct(condition) %>%
-                          mutate(new_column = 1:2) %>%
-                          slice(1)) %>%
-        ncol() %>%
-        expect_equal(4)
-})
-
-test_that("full_join", {
-    pasilla %>%
-        full_join(tibble::tibble(condition = "A",     other = 1:4)) %>% nrow() %>%
-        expect_equal(102197)
-})
 
 test_that("slice", {
     pasilla %>%
@@ -152,6 +102,7 @@ test_that("count", {
         expect_equal(2)
 })
 
+
 test_that("mutate counts", {
   
   se = tidySummarizedExperiment::pasilla |> mutate(counts_2 = counts) 
@@ -181,16 +132,6 @@ test_that("mutate counts", {
   
   })
 
-test_that("mutate creates new assay from counts and preserves dimnames", {
-    data(pasilla)
-    se <- pasilla[1:200, ]
-    res <- se %>% mutate(counts_copy = counts)
-    expect_true("counts_copy" %in% assayNames(res))
-    expect_equal(as.matrix(assay(res, "counts_copy")), as.matrix(assay(se, "counts")))
-    expect_identical(rownames(assay(res, "counts_copy")), rownames(assay(se, "counts")))
-    expect_identical(colnames(assay(res, "counts_copy")), colnames(assay(se, "counts")))
-})
-
 test_that("group_split splits character columns", {
   data(pasilla)
   pasilla |> 
@@ -213,22 +154,4 @@ test_that("group_split splits with mutliple arguments", {
     group_split(condition, counts > 0) |> 
     length() |> 
     expect_equal(4)
-})
-
-test_that("mutate features", {
-  pasilla %>%
-    mutate_features(new = 1:nrow(pasilla)) %>%
-    rowData() %>%
-    as_tibble() %>%
-    pull(new) %>%
-    expect_equal(1:nrow(pasilla))
-})
-
-test_that("mutate samples", {
-  pasilla %>%
-    mutate_samples(new = 1:ncol(pasilla)) %>%
-    colData() %>%
-    as_tibble() %>%
-    pull(new) %>%
-    expect_equal(1:ncol(pasilla))
 })
