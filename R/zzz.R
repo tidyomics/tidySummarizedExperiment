@@ -9,3 +9,7 @@
         "See https://github.com/tidyomics/tidyprint for more information."
     )
 }
+
+# Define global variables to avoid R CMD check NOTEs
+utils::globalVariables(c(".", ".feature", ".sample", ".original_index", 
+                          "data___", "i___", "name", "value"))

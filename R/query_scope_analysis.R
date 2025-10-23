@@ -1,4 +1,4 @@
-
+#' @importFrom SummarizedExperiment assayNames
 
 #' Analyze query complexity to determine analysis strategy
 #'
@@ -402,11 +402,24 @@ modify_features <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
+  # Create a data frame with rowData and temporarily add .feature column
+  rowdata_df <- rowData(.data) |>
+    tibble::as_tibble(rownames = "rowname__")
+  
+  # Temporarily add .feature column for evaluation
+  rowdata_df$.feature <- rownames(.data)
+  
   # Apply the operation to rowData
-  modified_rowdata <- rowData(.data) |>
-    tibble::as_tibble(rownames = "rowname__") |>
-    dplyr_fn(...) |>
-    DataFrame_rownames()
+  modified_rowdata <- rowdata_df |>
+    dplyr_fn(...)
+  
+  # Remove the temporary .feature column if it exists
+  if (".feature" %in% colnames(modified_rowdata)) {
+    modified_rowdata <- modified_rowdata |> dplyr::select(-.feature)
+  }
+  
+  # Convert back to DataFrame with rownames
+  modified_rowdata <- DataFrame_rownames(modified_rowdata)
   
   # Handle operations that might change the number of features
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
@@ -416,9 +429,15 @@ modify_features <- function(.data, operation, ...) {
     # Get the row indices that remain after the operation
     original_rowdata <- rowData(.data) |> tibble::as_tibble(rownames = "rowname__")
     original_rowdata$.original_index <- seq_len(nrow(original_rowdata))
+    original_rowdata$.feature <- rownames(.data)
     
     filtered_with_index <- original_rowdata |>
-      dplyr_fn(...) 
+      dplyr_fn(...)
+    
+    # Remove the temporary .feature column if it exists
+    if (".feature" %in% colnames(filtered_with_index)) {
+      filtered_with_index <- filtered_with_index |> dplyr::select(-.feature)
+    } 
     
     # Subset the entire SE object (works for zero or more features)
     remaining_indices <- filtered_with_index$.original_index
@@ -477,11 +496,24 @@ modify_samples <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
+  # Create a data frame with colData and temporarily add .sample column
+  coldata_df <- colData(.data) |>
+    tibble::as_tibble(rownames = "rowname__")
+  
+  # Temporarily add .sample column for evaluation
+  coldata_df$.sample <- colnames(.data)
+  
   # Apply the operation to colData
-  modified_coldata <- colData(.data) |>
-    tibble::as_tibble(rownames = "rowname__") |>
-    dplyr_fn(...) |>
-    DataFrame_rownames()
+  modified_coldata <- coldata_df |>
+    dplyr_fn(...)
+  
+  # Remove the temporary .sample column if it exists
+  if (".sample" %in% colnames(modified_coldata)) {
+    modified_coldata <- modified_coldata |> dplyr::select(-.sample)
+  }
+  
+  # Convert back to DataFrame with rownames
+  modified_coldata <- DataFrame_rownames(modified_coldata)
   
   # Handle operations that might change the number of samples
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
@@ -491,9 +523,15 @@ modify_samples <- function(.data, operation, ...) {
     # Get the row indices that remain after the operation
     original_coldata <- colData(.data) |> tibble::as_tibble(rownames = "rowname__")
     original_coldata$.original_index <- seq_len(nrow(original_coldata))
+    original_coldata$.sample <- colnames(.data)
     
     filtered_with_index <- original_coldata |>
-      dplyr_fn(...) 
+      dplyr_fn(...)
+    
+    # Remove the temporary .sample column if it exists
+    if (".sample" %in% colnames(filtered_with_index)) {
+      filtered_with_index <- filtered_with_index |> dplyr::select(-.sample)
+    } 
     
     # Subset the entire SE object (works for zero or more samples)
     remaining_indices <- filtered_with_index$.original_index
