@@ -28,7 +28,7 @@ each group."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.19.7</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.19.8</span>
       </span>
     </div>
 
@@ -62,7 +62,7 @@ each group."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Subset rows using their positions</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/fix-slice/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
     <div class="hidden name"><code>slice.Rd</code></div>
     </div>
 
@@ -80,7 +80,7 @@ each group.</p>
 
     <div id="ref-usage">
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'SummarizedExperiment'</span></span>
-<span><span class="fu">slice</span><span class="op">(</span><span class="va">.data</span>, <span class="va">...</span>, .preserve <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">slice</span><span class="op">(</span><span class="va">.data</span>, <span class="va">...</span>, .by <span class="op">=</span> <span class="cn">NULL</span>, .preserve <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div id="arguments">
@@ -100,6 +100,13 @@ Integer row values.</p>
 The values provided must be either all positive or all negative.
 Indices beyond the number of rows in the input are silently ignored.</p>
 <p>For <code>slice_*()</code>, these arguments are passed on to methods.</p></dd>
+
+
+<dt id="arg--by">.by<a class="anchor" aria-label="anchor" href="#arg--by"></a></dt>
+<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="figures/lifecycle-experimental.svg" alt="[Experimental]"></a></p>
+<p>&lt;<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a></code>&gt; Optionally, a selection of columns to
+group by for just this operation, functioning as an alternative to <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by()</a></code>. For
+details and examples, see <a href="https://dplyr.tidyverse.org/reference/dplyr_by.html" class="external-link">?dplyr_by</a>.</p></dd>
 
 
 <dt id="arg--preserve">.preserve<a class="anchor" aria-label="anchor" href="#arg--preserve"></a></dt>
