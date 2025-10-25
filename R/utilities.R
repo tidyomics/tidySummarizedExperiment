@@ -443,7 +443,7 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
 #' @param .by The .by argument from slice
 #' @return Logical indicating if this is an ungrouped range slice
 #' @noRd
-is_range_slice_ungrouped_detected <- function(.data, slice_args, .by= NULL) {
+is_range_slice_ungrouped_detected <- function(.data, slice_args, .by = NULL) {
   # First check if this is a range slice
   is_range_slice <- any(sapply(slice_args, function(x) {
     if (is.numeric(x)) {
