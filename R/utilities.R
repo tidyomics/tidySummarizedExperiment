@@ -479,7 +479,7 @@ slice_optimised <- function(.data, ..., .by = NULL, .preserve = FALSE) {
   slice_args <- list(...)
   if (is_range_slice_ungrouped_detected(slice_args, .data, .by)) {
     # For range slices on ungrouped data, throw an error with a helpful message
-    stop("tidySummarizedExperiment says: slice using a range doesn't work on ungrouped data. Please use group_by() first or convert to tibble with as_tibble() before using slice with ranges.")
+    stop("tidySummarizedExperiment says: slice using a range doesn't work on ungrouped data. Please use .by parameter or convert to tibble with as_tibble() before using slice with ranges.")
   }
   
   
