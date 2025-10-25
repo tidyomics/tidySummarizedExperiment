@@ -443,7 +443,7 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
 #' @param .by The .by argument from slice
 #' @return Logical indicating if this is an ungrouped range slice
 #' @noRd
-is_range_slice_ungrouped_detected <- function(slice_args, .data, .by= NULL) {
+is_range_slice_ungrouped_detected <- function(.data, slice_args, .by= NULL) {
   # First check if this is a range slice
   is_range_slice <- any(sapply(slice_args, function(x) {
     if (is.numeric(x)) {
@@ -459,8 +459,12 @@ is_range_slice_ungrouped_detected <- function(slice_args, .data, .by= NULL) {
   }
   
   # If it is a range slice, check if the data is grouped
-  # For SummarizedExperiment objects, only check .by parameter
-  is_grouped <- !quo_is_null(.by)
+  # Check both .by parameter and if the data itself is grouped
+  is_grouped_by_param <- !quo_is_null(.by)
+  is_grouped_by_data <- inherits(.data, "grouped_df") || 
+    (inherits(.data, "SummarizedExperiment") && !is.null(attr(.data, "groups")))
+  
+  is_grouped <- is_grouped_by_param || is_grouped_by_data
   
   # Return TRUE if ungrouped (should throw error)
   !is_grouped
@@ -477,7 +481,7 @@ slice_optimised <- function(.data, ..., .by = NULL, .preserve = FALSE) {
   # In this case, we should return a tibble with the equivalent data
   # Check if this is an ungrouped range slice
   slice_args <- list(...)
-  if (is_range_slice_ungrouped_detected(slice_args, .data, .by)) {
+  if (is_range_slice_ungrouped_detected(.data, slice_args, .by)) {
     # For range slices on ungrouped data, throw an error with a helpful message
     stop("tidySummarizedExperiment says: slice using a range doesn't work on ungrouped data. Please use .by parameter or convert to tibble with as_tibble() before using slice with ranges.")
   }
