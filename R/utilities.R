@@ -495,7 +495,7 @@ slice_optimised <- function(.data, ..., .by = NULL, .preserve = FALSE) {
     dplyr::slice(..., .by = !!.by, .preserve = .preserve)
   
   # Remove .by column only if it's not a special column
-  if (!quo_name(.by) %in% c(f_(.data)$name, s_(.data)$name)) {
+  if (!rlang::quo_is_null(.by) && !quo_name(.by) %in% c(f_(.data)$name, s_(.data)$name)) {
     simulated_slice <- simulated_slice %>% select(-!!.by)
   }
  
