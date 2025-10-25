@@ -17,7 +17,7 @@ output:
     fig_caption: yes
     df_print: paged
 params:
-  use_cache: true
+  use_cache: false
 vignette: >
   %\VignetteIndexEntry{Speed-up `tidySummarizedExperiment` with `plyxp`}
   %\VignetteEngine{knitr::rmarkdown}
@@ -26,6 +26,21 @@ vignette: >
 
 ```{r setup}
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+
+# Install missing packages if needed (universal approach)
+required_packages <- c("devtools", "ggplot2", "dplyr", "SummarizedExperiment", 
+                      "airway", "microbenchmark", "rlang")
+
+for (pkg in required_packages) {
+  if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
+    if (pkg %in% c("SummarizedExperiment", "airway")) {
+      if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+      BiocManager::install(pkg, ask = FALSE)
+    } else {
+      install.packages(pkg)
+    }
+  }
+}
 ```
 
 ### Motivation and design principles
@@ -40,12 +55,12 @@ These design choices aim to preserve dimnames, avoid unnecessary tibble round-tr
 
 ### Overview
 
-This vignette benchmarks a set of mutate() scenarios on two branches of the repository, by explicitly checking out the branches via git worktree, loading each branch's code with devtools::load_all(), running the same scenarios multiple times, and comparing the runtimes with ggplot boxplots.
+This vignette benchmarks a set of mutate(), filter(), select(), and distinct() scenarios comparing performance before and after optimization, by explicitly checking out specific commits via git worktree, loading each commit's code with devtools::load_all(), running the same scenarios multiple times, and comparing the runtimes with ggplot boxplots.
 
-- Branch A: origin/master
-- Branch B: origin/query-to-slot-routines
+- Before optimization: commit 87445757d2d0332e7d335d22cd28f73568b7db66
+- After optimization: commit 9f7c26e0519c92f9682b270d566da127367bcbc0
 
-Requirements: git, devtools, airway, dplyr, SummarizedExperiment, ggplot2.
+Requirements: git, devtools, airway, dplyr, SummarizedExperiment, ggplot2, microbenchmark.
 
 ### Setup helper functions
 
@@ -58,7 +73,6 @@ suppressPackageStartupMessages({
   library(devtools)
   library(airway)
   library(microbenchmark)
-  library(future.apply)
 })
 
 ensure_worktree <- function(branch_ref, worktree_dir) {
@@ -107,7 +121,17 @@ benchmark_scenarios <- function() {
     select_rowdata_simple = quo({ se %>% select(.feature) }),
     select_assay_only = quo({ se %>% select(counts) }),
     select_mixed_keys_counts = quo({ se %>% select(.sample, .feature, counts) }),
-    select_coldata_wide = quo({ se %>% select(.sample, dex, avgLength, SampleName) })
+    select_coldata_wide = quo({ se %>% select(.sample, dex, avgLength, SampleName) }),
+
+    # Distinct benchmarks (covering colData-only, rowData-only, assays-only, mixed)
+    distinct_coldata_simple = quo({ se %>% distinct(dex) }),
+    distinct_coldata_multiple = quo({ se %>% distinct(dex, avgLength) }),
+    distinct_rowdata_simple = quo({ se %>% distinct(.feature) }),
+    distinct_assay_only = quo({ se %>% distinct(counts) }),
+    distinct_mixed_keys_counts = quo({ se %>% distinct(.sample, .feature, counts) }),
+    distinct_coldata_wide = quo({ se %>% distinct(.sample, dex, avgLength, SampleName) }),
+    distinct_with_keep_all = quo({ se %>% distinct(dex, .keep_all = TRUE) }),
+    distinct_complex_expression = quo({ se %>% distinct(dex, avgLength) })
   )
 }
 
@@ -163,38 +187,40 @@ run_all_scenarios_parallel <- function(branch_label, reps = 20L, workers = 1L, i
 
 ### Prepare explicit worktrees for both branches
 
-```{r worktrees, cache=TRUE}
-branch_a_ref <- "origin/master"
-branch_b_ref <- "origin/query-to-slot-routines"
-wt_a <- normalizePath("../tidySummarizedExperiment.__bench_master__", mustWork = FALSE)
-wt_b <- normalizePath("../tidySummarizedExperiment.__bench_query_to_slot__", mustWork = FALSE)
-ensure_worktree(branch_a_ref, wt_a)
-ensure_worktree(branch_b_ref, wt_b)
+```{r worktrees, cache=FALSE}
+# Before optimization commit
+commit_before <- "87445757d2d0332e7d335d22cd28f73568b7db66"
+# After optimization commit  
+commit_after <- "9f7c26e0519c92f9682b270d566da127367bcbc0"
+
+wt_before <- normalizePath("../tidySummarizedExperiment.__bench_before__", mustWork = FALSE)
+wt_after <- normalizePath("../tidySummarizedExperiment.__bench_after__", mustWork = FALSE)
+ensure_worktree(commit_before, wt_before)
+ensure_worktree(commit_after, wt_after)
 ```
 
 ### Run benchmarks on both branches
 
-```{r run_benchmarks, cache=TRUE}
+```{r run_benchmarks, cache=FALSE}
 use_cache <- isTRUE(params$use_cache)
 cache_file <- normalizePath("benchmark_results.rda", mustWork = FALSE)
 
 if (use_cache && file.exists(cache_file)) {
   load(cache_file, envir = environment())
 } else {
-  # Branch A
-  load_branch_code(wt_a)
-  init_a <- function() suppressMessages(devtools::load_all(wt_a, quiet = TRUE))
-  res_a <- run_all_scenarios_parallel(branch_label = "master", reps = 20L, workers = 8L, initializer = init_a)
+  # Before optimization (commit 87445757)
+  load_branch_code(wt_before)
+  res_before <- run_all_scenarios(branch_label = "before_optimization", reps = 10L)
 
-  # Branch B
-  load_branch_code(wt_b)
-  init_b <- function() suppressMessages(devtools::load_all(wt_b, quiet = TRUE))
-  res_b <- run_all_scenarios_parallel(branch_label = "query-to-slot-routines", reps = 20L, workers = 1L, initializer = init_b)
+  # After optimization (commit 9f7c26e)
+  load_branch_code(wt_after)
+  res_after <- run_all_scenarios(branch_label = "after_optimization", reps = 10L)
 
-  results <- dplyr::bind_rows(res_a, res_b) %>%
+  results <- dplyr::bind_rows(res_before, res_after) %>%
     dplyr::mutate(operation = dplyr::case_when(
       grepl("^filter", scenario) ~ "filter",
       grepl("^select", scenario) ~ "select",
+      grepl("^distinct", scenario) ~ "distinct",
       TRUE ~ "mutate"
     ))
 
@@ -229,7 +255,7 @@ ggplot(results, aes(x = scenario, y = elapsed_ms, fill = branch)) +
   coord_flip() +
   facet_grid(operation ~ ., scales = "free_y", space = "free_y") +
   annotation_logticks(sides = "b") +
-  labs(title = "Mutate, Filter, and Select benchmark across branches",
+  labs(title = "Performance comparison: Before vs After optimization",
        x = "Scenario",
        y = "Elapsed (ms)") +
   theme_bw() +
