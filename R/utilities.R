@@ -437,23 +437,78 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
   se
 }
 #' @importFrom methods is
-slice_optimised <- function(.data, ..., .preserve=FALSE) {
+#' @keywords internal
+#' @param slice_args List of arguments passed to slice
+#' @param .data The data object to check for grouping
+#' @param .by The .by argument from slice
+#' @return Logical indicating if this is an ungrouped range slice
+#' @noRd
+is_range_slice_ungrouped_detected <- function(slice_args, .data, .by= NULL) {
+  # First check if this is a range slice
+  is_range_slice <- any(sapply(slice_args, function(x) {
+    if (is.numeric(x)) {
+      length(x) > 1
+    } else {
+      FALSE
+    }
+  }))
+  
+  # If not a range slice, return FALSE (no error needed)
+  if (!is_range_slice) {
+    return(FALSE)
+  }
+  
+  # If it is a range slice, check if the data is grouped
+  # For SummarizedExperiment objects, only check .by parameter
+  is_grouped <- !quo_is_null(.by)
+  
+  # Return TRUE if ungrouped (should throw error)
+  !is_grouped
+}
+
+slice_optimised <- function(.data, ..., .by = NULL, .preserve = FALSE) {
   
   . <- NULL
   
+  .by <- enquo(.by)
+
+  # For slice operations that might select multiple rows, we need to handle the case where
+  # the result cannot maintain the SummarizedExperiment structure
+  # In this case, we should return a tibble with the equivalent data
+  # Check if this is an ungrouped range slice
+  slice_args <- list(...)
+  if (is_range_slice_ungrouped_detected(slice_args, .data, .by)) {
+    # For range slices on ungrouped data, throw an error with a helpful message
+    stop("tidySummarizedExperiment says: slice using a range doesn't work on ungrouped data. Please use group_by() first or convert to tibble with as_tibble() before using slice with ranges.")
+  }
+  
+  
+  # For single row slices, use the original optimized approach
   # This simulated tibble only gets samples and features so we know those that have been completely omitted already
   # In order to save time for the as_tibble conversion
   simulated_slice = 
-    simulate_feature_sample_from_tibble(.data) %>% 
-    dplyr::slice(..., .preserve = .preserve)
+    simulate_feature_sample_from_tibble(.data, !!.by) %>% 
+    dplyr::slice(..., .by = !!.by, .preserve = .preserve)
   
+  # Remove .by column only if it's not a special column
+  if (!quo_name(.by) %in% c(f_(.data)$name, s_(.data)$name)) {
+    simulated_slice <- simulated_slice %>% select(-!!.by)
+  }
+ 
   .data = 
     .data %>%
     
     # Subset the object for samples and features present in the simulated data
-    .[rownames(.) %in% simulated_slice[,f_(.)$name], 
-      colnames(.) %in% simulated_slice[,s_(.)$name]] %>% 
-    inner_join(simulated_slice, by = c(f_(.)$name, s_(.)$name)) 
+    .[rownames(.data) %in% simulated_slice[,f_(.data)$name][[1]], 
+      colnames(.data) %in% simulated_slice[,s_(.data)$name][[1]]
+      ] 
+  .data = .data %>% 
+    inner_join(simulated_slice, by = c(f_(.data)$name, s_(.data)$name)) 
+  
+  # If the result is already a tibble (due to mixed scope join), return it directly
+  if (.data %>% is("tbl")) {
+    return(.data)
+  }
   
   # If order do not match with the one proposed by slice convert to tibble
   if (.data %>% is("tbl") %>% not()) {
@@ -1048,13 +1103,103 @@ get_special_column_name_symbol <- function(name) {
 # This function produce artificially the feature ans sample column, 
 # to make optimisation before as_tibble is called
 # for big datasets
-simulate_feature_sample_from_tibble <- function(.data) {
+simulate_feature_sample_from_tibble <- function(.data, ...) {
 
     . <- NULL
     r <- rownames(.data) %>% .[rep(1:length(.), ncol(.data) )]
     c <- colnames(.data) %>% .[rep(1:length(.), each = nrow(.data) )]
     
-    tibble(!!f_(.data)$symbol := r,  !!s_(.data)$symbol := c)
+    # Create base tibble with feature and sample columns
+    result_tibble <- tibble(!!f_(.data)$symbol := r,  !!s_(.data)$symbol := c)
+    
+    # BELOW IS THE MORE COMPLEX GROUP CASE
+    # THAT SLOWS DOWS 10x
+    # IN THE FUTURE THIS COULD BE OPTIMISED
+    
+    # Store original dimensions for use in rowData/colData processing
+    n_features_orig <- nrow(.data)
+    n_samples_orig <- ncol(.data)
+    feature_names_orig <- rownames(.data)
+    sample_names_orig <- colnames(.data)
+    
+    # Store column names to avoid issues with .data references
+    feature_col_name <- f_(.data)$name
+    sample_col_name <- s_(.data)$name
+    feature_col_symbol <- f_(.data)$symbol
+    sample_col_symbol <- s_(.data)$symbol
+    
+    # Check if ... parameters reference columns in rowData or colData
+    # and attach only those columns to the output
+    
+    # Extract column names from ... parameters
+    slice_colnames <- get_ellipse_colnames(...)
+    
+    # Filter out any non-character elements (like quosures)
+    slice_colnames <- slice_colnames[is.character(slice_colnames)]
+    
+    # Only proceed if there are slice parameters
+    if (length(slice_colnames) > 0) {
+        # Get available rowData and colData column names
+        rowdata_colnames <- if (.hasSlot(.data, "rowData") | .hasSlot(.data, "elementMetadata")) {
+            colnames(rowData(.data))
+        } else {
+            character(0)
+        }
+        
+        coldata_colnames <- colnames(colData(.data))
+        
+        # Check which slice columns are in rowData
+        rowdata_matches <- intersect(slice_colnames, rowdata_colnames)
+        
+        # Check which slice columns are in colData  
+        coldata_matches <- intersect(slice_colnames, coldata_colnames)
+        
+        # Add rowData columns if they are referenced in ...
+        if (length(rowdata_matches) > 0) {
+            # Create rowData tibble with repeated rows for each sample
+            rowdata_df <- as.data.frame(rowData(.data)[, rowdata_matches, drop = FALSE])
+            rowdata_df[[feature_col_name]] <- rownames(rowData(.data))
+            
+            # Create expanded tibble more efficiently
+            rowdata_tibble <- tibble(
+                !!feature_col_symbol := rep(rowdata_df[[feature_col_name]], each = n_samples_orig),
+                !!sample_col_symbol := rep(sample_names_orig, n_features_orig)
+            )
+            
+            # Add the rowData columns
+            for (col in rowdata_matches) {
+                rowdata_tibble[[col]] <- rep(rowdata_df[[col]], each = n_samples_orig)
+            }
+            
+            # Join with result tibble
+            result_tibble <- result_tibble %>%
+                left_join(rowdata_tibble, by = c(feature_col_name, sample_col_name))
+        }
+        
+        # Add colData columns if they are referenced in ...
+        if (length(coldata_matches) > 0) {
+            # Create colData tibble with repeated columns for each feature
+            coldata_df <- as.data.frame(colData(.data)[, coldata_matches, drop = FALSE])
+            coldata_df[[sample_col_name]] <- rownames(colData(.data))
+            
+            # Create expanded tibble more efficiently
+            coldata_tibble <- tibble(
+                !!feature_col_symbol := rep(feature_names_orig, each = n_samples_orig),
+                !!sample_col_symbol := rep(coldata_df[[sample_col_name]], n_features_orig)
+            )
+            
+            # Add the colData columns
+            for (col in coldata_matches) {
+                coldata_tibble[[col]] <- rep(coldata_df[[col]], n_features_orig)
+            }
+            
+            # Join with result tibble
+            result_tibble <- result_tibble %>%
+                left_join(coldata_tibble, by = c(feature_col_name, sample_col_name))
+        }
+    }
+    
+    return(result_tibble)
 }
 
 feature__ <- get_special_column_name_symbol(".feature")
