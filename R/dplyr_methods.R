@@ -375,7 +375,7 @@ slice.SummarizedExperiment <- function(.data, ..., .by = NULL, .preserve = FALSE
   
   .by <- enquo(.by)
   
-    return(slice_optimised(.data, ..., .by = !!.by, .preserve = .preserve))
+    slice_optimised(.data, ..., .by = !!.by, .preserve = .preserve)
     
     # .data |>
     #     as_tibble(skip_GRanges = T) |>
