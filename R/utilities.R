@@ -1117,7 +1117,7 @@ simulate_feature_sample_from_tibble <- function(.data, ...) {
     result_tibble <- tibble(!!f_(.data)$symbol := r,  !!s_(.data)$symbol := c)
     
     # BELOW IS THE MORE COMPLEX GROUP CASE
-    # THAT SLOWS DOWS 10x
+    # THAT SLOWS DOWN 10x
     # IN THE FUTURE THIS COULD BE OPTIMISED
     
     # Store original dimensions for use in rowData/colData processing
