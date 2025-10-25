@@ -2,7 +2,7 @@ tidySummarizedExperiment - part of tidytranscriptomics
 ================
 
 <!-- badges: start -->
-
+ 
 [![Lifecycle:maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://www.tidyverse.org/lifecycle/#maturing)
 [![R build
 status](https://github.com/stemangiola/tidySummarizedExperiment/workflows/R-CMD-check-bioc/badge.svg)](https://github.com/stemangiola/tidySummarizedExperiment/actions)

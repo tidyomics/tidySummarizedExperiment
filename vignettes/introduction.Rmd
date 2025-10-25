@@ -4,8 +4,13 @@ author: "Stefano Mangiola"
 date: "`r Sys.Date()`"
 package: tidySummarizedExperiment
 output:
-  BiocStyle::html_document:
-    toc_float: true
+  prettydoc::html_pretty:
+    theme: cayman
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: true
+    df_print: paged
 bibliography: tidySummarizedExperiment.bib
 vignette: >
   %\VignetteEngine{knitr::knitr}
@@ -20,14 +25,13 @@ vignette: >
 
 **Brings SummarizedExperiment to the tidyverse!**
 
-website: [stemangiola.github.io/tidySummarizedExperiment/](https://stemangiola.github.io/tidySummarizedExperiment/)
+website: [stemangiola.github.io/tidySummarizedExperiment/](https://tidyomics.github.io/tidySummarizedExperiment/)
 
 Please also have a look at
 
-- [tidySingleCellExperiment](https://stemangiola.github.io/tidySingleCellExperiment/) for tidy manipulation of SingleCellExperiment objects
+- [tidySingleCellExperiment](https://tidyomics.github.io/tidySingleCellExperiment/) for tidy manipulation of SingleCellExperiment objects
 - [tidyseurat](https://stemangiola.github.io/tidyseurat/) for tidy manipulation of Seurat objects
 - [tidybulk](https://stemangiola.github.io/tidybulk/) for tidy analysis of RNA sequencing data
-- [nanny](https://github.com/stemangiola/nanny) for tidy high-level data analysis and manipulation
 - [tidygate](https://github.com/stemangiola/tidygate) for adding custom gate information to your tibble
 - [tidyHeatmap](https://stemangiola.github.io/tidyHeatmap/) for heatmaps produced with tidy principles
 
@@ -72,13 +76,14 @@ BiocManager::install("tidySummarizedExperiment")
 
 From Github (development)
 ```{r, eval=FALSE}
-devtools::install_github("stemangiola/tidySummarizedExperiment")
+remotes::install_github("stemangiola/tidySummarizedExperiment")
 ```
 
 Load libraries used in the examples.
 
 ```{r}
 library(ggplot2)
+library(dplyr)
 library(tidySummarizedExperiment)
 ```
 
@@ -112,7 +117,7 @@ We can use `slice` to choose rows by position, for example to choose the first r
 
 ```{r}
 pasilla_tidy %>%
-    slice(1)
+    dplyr::slice(1)
 ```
 
 We can use `filter` to choose rows by criteria.
@@ -133,7 +138,7 @@ We can use `count` to count how many rows we have for each sample.
 
 ```{r}
 pasilla_tidy %>%
-    count(.sample)
+    dplyr::count(.sample)
 ```
 
 We can use `distinct` to see what distinct sample information we have.
@@ -147,7 +152,7 @@ We could use `rename` to rename a column. For example, to modify the type column
 
 ```{r}
 pasilla_tidy %>%
-    rename(sequencing=type)
+    dplyr::rename(sequencing=type)
 ```
 
 We could use `mutate` to create a column. For example, we could create a new type column that contains single
@@ -163,6 +168,21 @@ We could use `unite` to combine multiple columns into a single column.
 ```{r}
 pasilla_tidy %>%
     unite("group", c(condition, type))
+```
+
+We can use `append_samples` to combine multiple SummarizedExperiment objects by samples. It is equivalent to `cbind` but it is a tidyverse-like function.
+
+```{r}
+# Create two subsets of the data
+pasilla_subset1 <- pasilla_tidy %>%
+    filter(condition == "untreated")
+
+pasilla_subset2 <- pasilla_tidy %>%
+    filter(condition == "treated")
+
+# Combine them using append_samples
+combined_data <- append_samples(pasilla_subset1, pasilla_subset2)
+combined_data
 ```
 
 We can also combine commands with the tidyverse pipe `%>%`.

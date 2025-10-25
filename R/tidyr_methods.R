@@ -12,6 +12,10 @@
 #' @importFrom tidyr unnest
 #' @importFrom rlang quo_name
 #' @importFrom purrr imap
+#' @references
+#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
+#' 
+#' Wickham, H., Vaughan, D. (2023). tidyr: Tidy Messy Data. R package version 2.0.0, https://CRAN.R-project.org/package=tidyr
 #' @export
 unnest.tidySummarizedExperiment_nested <- function(data, cols, ...,
     keep_empty=FALSE, ptype=NULL, names_sep=NULL,
@@ -33,7 +37,6 @@ unnest.tidySummarizedExperiment_nested <- function(data, cols, ...,
 #'     unnest_summarized_experiment(data)
 #' 
 #' @importFrom tidyr unnest
-#' @importFrom purrr when
 #' @importFrom rlang quo_name
 #' @importFrom purrr imap
 #' @importFrom purrr map_lgl
@@ -208,7 +211,9 @@ unnest_summarized_experiment <- function(data, cols, ...,
 #'     
 #' @importFrom rlang enquos
 #' @importFrom rlang :=
-#' @importFrom purrr when
+#' @importFrom tidyselect all_of
+#' @importFrom tidyselect any_of
+#' @importFrom stats setNames
 #' @importFrom purrr pmap
 #' @importFrom tidyr nest
 #' @references

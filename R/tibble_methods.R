@@ -12,7 +12,9 @@
 #' 
 #' @importFrom purrr reduce
 #' @importFrom purrr map
+#' @importFrom purrr when
 #' @importFrom tidyr spread
+#' @importFrom stats setNames
 #' @importFrom tibble enframe
 #' @importFrom SummarizedExperiment colData
 #' @importFrom pkgconfig get_config

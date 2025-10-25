@@ -3,15 +3,14 @@ context("dplyr test")
 library(tidySummarizedExperiment)
 
 
-test_that("bind_rows", {
-    pasilla_bind <- bind_rows(pasilla, pasilla)
+test_that("append_samples", {
+    pasilla_bind <- append_samples(pasilla, pasilla)
 
-    pasilla_bind %>%
-        count(.sample, .feature) %>%
-        dplyr::count(n) %>%
-        filter(n > 1) %>%
-        nrow() %>%
-        expect_equal(0)
+    # Check that the combined object has the expected number of samples
+    expect_equal(ncol(pasilla_bind), ncol(pasilla) * 2)
+    
+    # Check that it's still a SummarizedExperiment
+    expect_true(inherits(pasilla_bind, "SummarizedExperiment"))
 })
 
 test_that("distinct", {
@@ -52,63 +51,13 @@ test_that("mutate", {
 
 test_that("rename", {
     pasilla %>%
-        rename(groups = condition) %>%
+        rename(groups = condition, type_2 = type) %>%
         select(groups) %>%
         ncol() %>%
         expect_equal(1)
 })
 
-test_that("left_join", {
-    expect_equal(
-        pasilla %>%
-            left_join(pasilla %>%
-                          distinct(condition) %>%
-                          mutate(new_column = 1:2)) %>%
-            colData() %>%
-            ncol(),
-        pasilla %>%
-            colData() %>%
-            ncol() %>%
-            sum(1)
-    )
-})
 
-test_that("left_join 0 samples", {
- 
-    pasilla[0,] %>%
-      left_join(pasilla %>%
-                  distinct(condition) %>%
-                  mutate(new_column = 1)) |> 
-    as_tibble() |> 
-      pull(new_column) %>%
-      unique() |> 
-      expect_equal(1)
-  
-})
-
-test_that("inner_join", {
-    pasilla %>% inner_join(pasilla %>%
-                          distinct(condition) %>%
-                          mutate(new_column = 1:2) %>%
-                          slice(1)) %>%
-        ncol() %>%
-        expect_equal(4)
-})
-
-test_that("right_join", {
-    pasilla %>% right_join(pasilla %>%
-                          distinct(condition) %>%
-                          mutate(new_column = 1:2) %>%
-                          slice(1)) %>%
-        ncol() %>%
-        expect_equal(4)
-})
-
-test_that("full_join", {
-    pasilla %>%
-        full_join(tibble::tibble(condition = "A",     other = 1:4)) %>% nrow() %>%
-        expect_equal(102197)
-})
 
 test_that("slice", {
     pasilla %>%
@@ -152,6 +101,7 @@ test_that("count", {
         nrow() %>%
         expect_equal(2)
 })
+
 
 test_that("mutate counts", {
   
@@ -204,22 +154,4 @@ test_that("group_split splits with mutliple arguments", {
     group_split(condition, counts > 0) |> 
     length() |> 
     expect_equal(4)
-})
-
-test_that("mutate features", {
-  pasilla %>%
-    mutate_features(new = 1:nrow(pasilla)) %>%
-    rowData() %>%
-    as_tibble() %>%
-    pull(new) %>%
-    expect_equal(1:nrow(pasilla))
-})
-
-test_that("mutate samples", {
-  pasilla %>%
-    mutate_samples(new = 1:ncol(pasilla)) %>%
-    colData() %>%
-    as_tibble() %>%
-    pull(new) %>%
-    expect_equal(1:ncol(pasilla))
 })

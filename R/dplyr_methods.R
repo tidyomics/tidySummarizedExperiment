@@ -2,14 +2,8 @@
 #' @rdname bind_rows
 #' @inherit ttservice::bind_rows
 #' @param add.cell.ids Appends the corresponding values to
-#' @examples
-#' data(se)
-#' ttservice::bind_rows(se, se)
-#'
-#' se_bind <- se |> select(dex,  albut)
-#' se |> ttservice::bind_cols(se_bind)
-#' 
 #' @importFrom rlang dots_values
+#' @importFrom tidyselect all_of
 #' @importFrom rlang flatten_if
 #' @importFrom rlang is_spliced
 #' @importFrom SummarizedExperiment cbind
@@ -17,8 +11,17 @@
 #' @importFrom SummarizedExperiment assays<-
 #' @importFrom S4Vectors SimpleList
 #' @importFrom ttservice bind_rows
+#' @importFrom lifecycle deprecate_warn
+#' @references
+#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
 #' @export
 bind_rows.SummarizedExperiment <- function(..., .id=NULL, add.cell.ids=NULL) {
+    lifecycle::deprecate_warn(
+        when = "1.19.5",
+        what = "bind_rows()",
+        with = "append_samples()",
+        details = "bind_rows is not a generic method in dplyr and may cause conflicts. Use append_samples from ttservice instead."
+    )
     tts <- flatten_if(dots_values(...), is_spliced)
 
     new_obj <- 
@@ -51,6 +54,57 @@ bind_rows.SummarizedExperiment <- function(..., .id=NULL, add.cell.ids=NULL) {
         .x
     }) |> 
         SimpleList()
+
+    new_obj
+}
+
+#' @name append_samples
+#' @rdname append_samples
+#' @title Append samples from multiple SummarizedExperiment objects
+#' 
+#' @description
+#' Append samples from multiple SummarizedExperiment objects by column-binding them.
+#' This function is equivalent to `cbind` but provides a tidyverse-like interface.
+#' 
+#' @param x First SummarizedExperiment object to combine
+#' @param ... Additional SummarizedExperiment objects to combine by samples
+#' @param .id Object identifier (currently not used)
+#' 
+#' @return A combined SummarizedExperiment object
+#' 
+#' @examples
+#' data(se)
+#' append_samples(se, se)
+#' 
+#' @importFrom ttservice append_samples
+#' @importFrom rlang dots_values
+#' @importFrom rlang flatten_if
+#' @importFrom rlang is_spliced
+#' @importFrom SummarizedExperiment cbind
+#' @importFrom SummarizedExperiment assays
+#' @importFrom SummarizedExperiment assays<-
+#' @importFrom S4Vectors SimpleList
+#' @references
+#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
+#' @export
+append_samples.SummarizedExperiment <- function(x, ..., .id = NULL) {
+    # Combine all arguments into a list
+    tts <- flatten_if(list(x, ...), is_spliced)
+    new_obj <- do.call(cbind, tts)
+
+    # If duplicated sample names
+    if (any(duplicated(colnames(new_obj)))) {
+        warning("tidySummarizedExperiment says:",
+                " you have duplicated sample names, they will be made unique.")
+        unique_colnames <- make.unique(colnames(new_obj), sep = "_")
+        colnames(new_obj) <- unique_colnames
+
+        # Change also all assays colnames
+        assays(new_obj) <- assays(new_obj)@listData |> lapply(function(.x) {
+            colnames(.x) <- unique_colnames
+            .x
+        }) |> SimpleList()
+    }
 
     new_obj
 }
@@ -194,82 +248,6 @@ distinct.SummarizedExperiment <- function(.data, ..., .keep_all=FALSE) {
         dplyr::distinct(..., .keep_all=.keep_all)
 }
 
-#' @name filter
-#' @rdname filter
-#' @inherit dplyr::filter
-#' 
-#' @examples
-#' data(pasilla)
-#' pasilla |>  filter(.sample == "untrt1")
-#'
-#' # Learn more in ?dplyr_tidy_eval
-#' 
-#' @importFrom purrr map
-#' @importFrom dplyr filter
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-filter.SummarizedExperiment <- function(.data, ..., .preserve=FALSE) {
-    # Deprecation of special column names
-    .cols <- enquos(..., .ignore_empty="all") %>% 
-        map(~ quo_name(.x)) %>% unlist()
-    if (is_sample_feature_deprecated_used(.data, .cols)) {
-        .data <- ping_old_special_column_into_metadata(.data)
-    }
-  
-    # Understand what the filtering is about
-    is_filter_from_samples <- .data |>
-        colData() |>
-        as_tibble() |> 
-        is_filer_columns_in_column_selection(...)
-
-    is_filter_from_features <- .data |>
-        rowData() |>
-        as_tibble() |> 
-        is_filer_columns_in_column_selection(...)
-  
-    # Get the simpler route if filter is only on samples
-    if (is_filter_from_samples & !is_filter_from_features){
-        filtered_samples <- 
-            colData(.data) |> 
-            as_tibble(rownames=s_(.data)$name) |> 
-            dplyr::filter(..., .preserve=.preserve) |> 
-            pull(!!s_(.data)$symbol)
-    
-        return(.data[,filtered_samples])
-    } else if (!is_filter_from_samples & is_filter_from_features) {
-    # Get the simpler route if filter is only on features
-        filtered_features <- rowData(.data) |> 
-            as_tibble(rownames=f_(.data)$name) |> 
-            dplyr::filter(..., .preserve=.preserve) |> 
-            pull(!!f_(.data)$symbol)
-    
-        return(.data[filtered_features,])
-    } else {
-    # If filtering is based on both features and samples
-    # Do filtering
-    new_meta <- .data |>
-        as_tibble(skip_GRanges=TRUE) |>
-        dplyr::filter(..., .preserve=.preserve)
-    
-        # If data cannot be a SummarizedExperiment
-        if (!is_rectangular(new_meta, .data)) {
-            message("tidySummarizedExperiment says:",
-                " The resulting data frame is not rectangular",
-                " (all genes for all samples), a tibble is returned",
-                " for independent data analysis.")
-            return(new_meta)
-        } else {
-            return(.data[  
-                unique(pull(new_meta,!!f_(.data)$symbol)), 
-                unique(pull(new_meta,!!s_(.data)$symbol)) 
-            ])
-        }
-    }  
-}
-
 #' @name group_by
 #' @rdname group_by
 #' @inherit dplyr::group_by
@@ -350,210 +328,6 @@ summarise.SummarizedExperiment <- function(.data, ...) {
 #' @export
 summarize.SummarizedExperiment <- summarise.SummarizedExperiment
 
-#' @name mutate
-#' @rdname mutate
-#' @inherit dplyr::mutate
-#' @family single table verbs
-#'
-#' @examples
-#' data(pasilla)
-#' pasilla |> mutate(logcounts=log2(counts))
-#'
-#' @importFrom rlang enquos
-#' @importFrom dplyr mutate
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @importFrom purrr map
-#' @export
-mutate.SummarizedExperiment <- function(.data, ...) {
-    # Check that we are not modifying a key column
-    cols <- enquos(...) |> names()
-    
-    # Deprecation of special column names
-    .cols <- enquos(..., .ignore_empty="all") %>% 
-        map(~ quo_name(.x)) %>% unlist()
-    if (is_sample_feature_deprecated_used(.data, .cols)) {
-        .data <- ping_old_special_column_into_metadata(.data)
-    }
-    
-    special_columns <- get_special_columns(
-        # Decrease the size of the dataset
-        .data[1:min(100, nrow(.data)), 1:min(20, ncol(.data))]
-    ) |> c(get_needed_columns(.data))
-    
-    tst <-
-        intersect(
-            cols,
-            special_columns
-        ) |> 
-        length() |>
-        gt(0)
-
-
-    if (tst) {
-        columns <-
-            special_columns |>
-                paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
-            columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
-    }
-
-    # If Ranges column not in query perform fast as_tibble
-    skip_GRanges <-
-        get_GRanges_colnames() %in% 
-        cols |>
-        not()
-    
-    .data |>
-        as_tibble(skip_GRanges=skip_GRanges) |>
-        dplyr::mutate(...) |>
-        update_SE_from_tibble(.data)
-}
-
-#' Mutate features
-#'
-#' Allows mutate call on features (rowData)
-#' of a SummarizedExperiment
-#'
-#' @param .data a SummarizedExperiment
-#' @param ... extra arguments passed to dplyr::mutate
-#'
-#' @return a SummarizedExperiment with modified rowData
-#' 
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' @export
-mutate_features <- function(.data, ...) {
-  feature_info <- rowData(.data) |>
-    tibble::as_tibble() |>
-    dplyr::mutate(...) |>
-    as("DataFrame")
-  rowData(.data) <- feature_info
-  return(.data)
-}
-
-#' Mutate samples
-#'
-#' Allows mutate call on samples (colData)
-#' of a SummarizedExperiment
-#'
-#' @param .data a SummarizedExperiment
-#' @param ... extra arguments passed to dplyr::mutate
-#'
-#' @return a SummarizedExperiment with modified colData
-#'
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#'
-#' @export
-mutate_samples <- function(.data, ...) {
-  sample_info <- colData(.data) |>
-    tibble::as_tibble() |>
-    dplyr::mutate(...) |>
-    as("DataFrame")
-  colData(.data) <- sample_info
-  return(.data)
-}
-
-#' @name rename
-#' @rdname rename
-#' @inherit dplyr::rename
-#' @family single table verbs
-#'
-#' @examples
-#' data(pasilla)
-#' pasilla |> rename(cond=condition)
-#'
-#' @importFrom tidyselect eval_select
-#' @importFrom SummarizedExperiment colData
-#' @importFrom SummarizedExperiment rowData
-#' @importFrom SummarizedExperiment colData<-
-#' @importFrom SummarizedExperiment rowData<-
-#' @importFrom dplyr rename
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-rename.SummarizedExperiment <- function(.data, ...) {
-
-    # Cols data frame
-    cols_data_frame <- 
-      bind_cols(
-      colData(.data) |> as_tibble() |> slice(0),
-      rowData(.data) |> as_tibble() |> slice(0)
-    )
-  
-    # Check that we are not modifying a key column
-    cols <- tidyselect::eval_select(expr(c(...)), cols_data_frame)
-
-    # Check if column is row-wise of column-wise
-    old_names <- cols_data_frame[,cols] |> colnames()
-    new_names <- cols |> names()
-    
-    # If renaming col and row data at the same time,
-    # it is too complicate, so error
-    if(
-        old_names %in% colnames(colData(.data)) |> any() &
-        old_names %in% colnames(rowData(.data)) |> any()
-    )
-      stop("tidySummarizedExperiment says:",
-        " renaming columns from both colData and rowData at the same time",
-        " is an unfeasible abstraction using dplyr.",
-        " Please run two `rename` commands for",
-        " sample-wise and feature-wise columns.")
-    
-    special_columns <- get_special_columns(
-        # Decrease the size of the dataset
-        .data[1:min(100, nrow(.data)), 1:min(20, ncol(.data))]
-    ) |> c(get_needed_columns(.data))
-    
-    tst <-
-        intersect(
-            cols |> names(),
-            special_columns
-        ) |>
-        length() |>
-        gt(0)
-
-    # If column in view-only columns stop
-    if (tst) {
-        columns <-
-            special_columns |>
-            paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
-            columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
-    }
-
-    # Rename sample annotation
-    if(old_names %in% colnames(colData(.data)) |> any())
-        colData(.data) <- dplyr::rename(colData(.data) |>
-            as.data.frame(), ...) |>
-            DataFrame()
-
-    # Rename gene annotation
-    if(old_names %in% colnames(rowData(.data)) |> any())
-        rowData(.data) <- dplyr::rename(rowData(.data) |>
-            as.data.frame(), ...) |>
-            DataFrame()
-
-    .data
-}
 
 
 #' @name rowwise
@@ -577,109 +351,7 @@ rowwise.SummarizedExperiment <- function(data, ...) {
         dplyr::rowwise()
 }
 
-#' @name left_join
-#' @rdname left_join
-#' @inherit dplyr::left_join
-#'
-#' @examples
-#' data(pasilla)
-#'
-#' tt <- pasilla 
-#' tt |> left_join(tt |>
-#'     distinct(condition) |>
-#'     mutate(new_column=1:2))
-#'
-#' @importFrom SummarizedExperiment colData
-#' @importFrom dplyr left_join
-#' @importFrom dplyr count
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-left_join.SummarizedExperiment <- function(x, y, by=NULL,
-    copy=FALSE, suffix=c(".x", ".y"), ...) {
-  
-    join_efficient_for_SE(x, y, by=by, copy=copy,
-        suffix=suffix, dplyr::left_join, ...)
 
-}
-
-#' @name inner_join
-#' @rdname inner_join
-#' @inherit dplyr::inner_join
-#'
-#' @examples
-#' data(pasilla)
-#' 
-#' tt <- pasilla 
-#' tt |> inner_join(tt |>
-#'     distinct(condition) |>
-#'     mutate(new_column=1:2) |>
-#'     slice(1))
-#'
-#' @importFrom dplyr inner_join
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-inner_join.SummarizedExperiment <- function(x, y, by=NULL,
-    copy=FALSE, suffix=c(".x", ".y"), ...) {
-  
-    join_efficient_for_SE(x, y, by=by, copy=copy,
-        suffix=suffix, dplyr::inner_join, ...)
-
-}
-
-#' @name right_join
-#' @rdname right_join
-#' @inherit dplyr::right_join
-#'
-#' @examples
-#' data(pasilla)
-#' 
-#' tt <- pasilla
-#' tt |> right_join(tt |>
-#'     distinct(condition) |>
-#'     mutate(new_column=1:2) |>
-#'     slice(1))
-#'
-#' @importFrom dplyr right_join
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-right_join.SummarizedExperiment <- function(x, y, by=NULL,
-    copy=FALSE, suffix=c(".x", ".y"), ...) {
-  
-    join_efficient_for_SE(x, y, by=by, copy=copy,
-        suffix=suffix, dplyr::right_join, ...)
-}
-
-#' @name full_join
-#' @rdname full_join
-#' @inherit dplyr::full_join
-#'
-#' @examples
-#' data(pasilla)
-#' 
-#' tt <- pasilla
-#' tt |> full_join(tibble::tibble(condition="treated", dose=10))
-#'
-#' @importFrom dplyr full_join
-#' @references
-#' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
-#' 
-#' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
-#' @export
-full_join.SummarizedExperiment <- function(x, y, by=NULL,
-    copy=FALSE, suffix=c(".x", ".y"), ...) {
-
-    join_efficient_for_SE(x, y, by=by, copy=copy,
-        suffix=suffix, dplyr::full_join, ...)
-}
 
 #' @name slice
 #' @rdname slice
@@ -720,149 +392,6 @@ slice.SummarizedExperiment <- function(.data, ..., .preserve=FALSE) {
     #     )
 }
 
-#' @name select
-#' @rdname select
-#' @inherit dplyr::select
-#'
-#' @examples
-#' data(pasilla)
-#' pasilla |> select(.sample, .feature, counts)
-#' 
-#' @importFrom SummarizedExperiment colData
-#' @importFrom dplyr select
-#' @export
-select.SummarizedExperiment <- function(.data, ...) {
-   
-    # colnames_col <- get_colnames_col(.data)
-    # colnames_row <- get_rownames_col(.data)
-    # colnames_assay = .data@assays@data |> names()
-    
-    . <- NULL
-    # Deprecation of special column names
-    .cols <- enquos(..., .ignore_empty="all") %>% 
-        map(~ quo_name(.x)) %>% unlist()
-    if (is_sample_feature_deprecated_used(.data, .cols)) {
-        .data <- ping_old_special_column_into_metadata(.data)
-    }
-  
-    # Warning if column names of assays do not overlap
-    if (check_if_assays_are_NOT_consistently_ordered(.data)) {
-    
-        warning(
-            "tidySummarizedExperiment says:",
-            " the assays in your SummarizedExperiment have column names,",
-            " but their order is not the same. Assays were internally",
-            " reordered to be consistent with each other.",
-            " To avoid unwanted behaviour it is highly reccomended",
-            " to have assays with the same order of colnames and rownames."
-        )
-        
-        # reorder assay colnames before printing
-        # Rearrange if assays has colnames and rownames
-        .data <- order_assays_internally_to_be_consistent(.data)
-    
-    }
-
-    # See if join done by sample, feature or both
-    columns_query <-
-        .data %>%
-        {
-            if(ncol(.) > 0) .[1,1, drop=FALSE]
-            else (.)
-        } |>
-        as_tibble() |> 
-        select_helper(...) |> 
-        colnames()
-  
-    row_data_tibble <-
-        rowData(.data) |> 
-        as_tibble(rownames=f_(.data)$name) 
-  
-    row_data_DF <-
-        row_data_tibble |> 
-        select(one_of(columns_query), !!f_(.data)$symbol) |>
-        suppressWarnings() %>% 
-        data.frame(row.names=pull(., !!f_(.data)$symbol)) |>
-        select(-!!f_(.data)$symbol) |>
-        DataFrame()
-    
-    # If SE does not have rownames, 
-    # I have to take them our of here, otherwise count integration, 
-    # which is a matrix and behaved differently from DataFrame fails
-    if(rownames(.data) |> is.null()) rownames(row_data_DF)  = NULL
-    
-    col_data_tibble <- 
-        colData(.data) |> 
-        as_tibble(rownames = s_(.data)$name) 
-  
-    col_data_DF <-
-        col_data_tibble |>  
-        select(any_of(columns_query), !!s_(.data)$symbol) |>
-        data.frame(row.names=pull(col_data_tibble, !!s_(.data)$symbol)) |>
-        select(-!!s_(.data)$symbol) |>
-        DataFrame()
-  
-    # If SE does not have rownames, 
-    # I have to take them our of here, otherwise count integration, 
-    # which is a matrix and behaved differently from DataFrame fails
-    if(colnames(.data) |> is.null()) rownames(col_data_DF)  = NULL
-    
-    count_data <-
-        assays(.data)@listData %>%
-            .[names(assays(.data)@listData) %in% columns_query]
-  
-    # If it's just col data
-    if (ncol(row_data_DF) == 0 &
-        !f_(.data)$name %in% columns_query &
-        length(count_data) == 0 &
-        (ncol(col_data_DF) > 0 | s_(.data)$name %in% columns_query)) {
-        message(
-            "tidySummarizedExperiment says:",
-            " Key columns are missing.",
-            " A data frame is returned for independent data analysis."
-        )
-    
-        col_data_tibble |> 
-            select_helper(...) |> 
-            slice(rep(1:n(), each=nrow(!!.data)))
-    }
-
-    # If it's just row data
-    else if (ncol(col_data_DF) == 0 &
-        !s_(.data)$name %in% columns_query &
-        length(count_data) == 0 &
-        (ncol(row_data_DF) > 0 | f_(.data)$name %in% columns_query)){
-        message("tidySummarizedExperiment says:",
-            " Key columns are missing.",
-            " A data frame is returned for independent data analysis.")
-    
-        row_data_tibble |> 
-            select_helper(...) |> 
-            slice(rep(1:n(), ncol(!!.data)  ))
-    }
-  
-    else if (!all(c(get_needed_columns(.data)) %in% columns_query)) {
-        if (ncol(.data)>100) {
-            message("tidySummarizedExperiment says:",
-                " You are doing a complex selection both sample-wise",
-                " and feature-wise. In the latter case, for efficiency",
-                " (until further development), it is better to separate",
-                " your selects sample-wise OR feature-wise.")
-        }
-        message("tidySummarizedExperiment says:",
-            " Key columns are missing.",
-            " A data frame is returned for independent data analysis.")
-    
-        .data |>
-            as_tibble(skip_GRanges=TRUE) |>
-            select_helper(...) 
-    } else {
-        rowData(.data) <- row_data_DF
-        colData(.data) <- col_data_DF
-        assays(.data) <- count_data
-        .data
-    }
-}
 
 #' @name sample_n
 #' @rdname sample_n
@@ -1089,3 +618,5 @@ group_split.SummarizedExperiment <- function(.tbl, ..., .keep = TRUE) {
   }
     
 }
+
+

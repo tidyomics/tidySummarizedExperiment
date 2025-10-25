@@ -1,7 +1,7 @@
 Type: Package
 Package: tidySummarizedExperiment
 Title: Brings SummarizedExperiment to the Tidyverse 
-Version: 1.19.4
+Version: 1.19.7
 Authors@R: c(person("Stefano", "Mangiola", email = "mangiolastefano@gmail.com",
                   role = c("aut", "cre")) )
 Author: Stefano Mangiola [aut, cre] <mangiolastefano@gmail.com>
@@ -19,7 +19,7 @@ License: GPL-3
 Depends:
     R (>= 4.3.0),
     SummarizedExperiment,
-    ttservice (>= 0.4.0)
+    ttservice (>= 0.5.0)
 Imports:
 	dplyr,
     tibble (>= 3.0.4),
@@ -40,7 +40,8 @@ Imports:
     cli,
     fansi,
     stats,
-    pkgconfig
+    pkgconfig,
+    plyxp
 Suggests:
     BiocStyle,
     testthat,
@@ -48,7 +49,9 @@ Suggests:
     markdown,
     rmarkdown,
     plotly,
-    rbibutils
+    rbibutils,
+    prettydoc,
+    airway
 VignetteBuilder: 
     knitr
 RdMacros:
