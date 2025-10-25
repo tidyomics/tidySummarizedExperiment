@@ -1090,10 +1090,12 @@ is_filer_columns_in_column_selection <- function(.data, ...) {
   error = function(e) FALSE)
 }
 
+#' @importFrom rlang set_names
 check_if_assays_are_NOT_consistently_ordered <- function(se) {
   
   # If I have any assay at all
-  assays(se) |> length() |> gt(0) &&
+  do_I_have_assays =
+    assays(se) |> length() |> gt(0) &&
     
     # If I have more than one assay with colnames
     Filter(
@@ -1103,9 +1105,24 @@ check_if_assays_are_NOT_consistently_ordered <- function(se) {
         map(colnames)
     ) |> 
     length() |>
-    gt(0) &&
-    
-    # If I have lack of consistency
+
+    gt(0) 
+  
+  # If I have lack of consistency
+  # Forcing assay names otherwise fails if assay is unnamed
+  if(
+    se |> 
+    assays(withDimnames = FALSE) |> 
+    as.list() |> 
+    names()
+  )
+    assays(se) = 
+      se |> 
+      assays(withDimnames = FALSE) |> 
+      as.list() |> 
+      set_names(se |> assays() |> as.list() |> length() |> seq_len())
+  
+  lack_of_consistency  = 
     se |> 
     assays(withDimnames = FALSE) |>
     as.list() |>
@@ -1114,6 +1131,8 @@ check_if_assays_are_NOT_consistently_ordered <- function(se) {
     equals(1) |>
     all() |>  
     not()
+  
+  do_I_have_assays && lack_of_consistency
 }
 
 check_if_any_dimnames_duplicated <- function(se, dim = "cols") {
