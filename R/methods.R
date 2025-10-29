@@ -6,7 +6,6 @@ setClass("tidySummarizedExperiment",
 #' @rdname tidy
 #' @title tidy for `Seurat`
 #'
-#' @param object A `Seurat` object.
 #' @return A `tidyseurat` object.
 #'
 #' @examples

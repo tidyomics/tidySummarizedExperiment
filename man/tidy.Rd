@@ -17,8 +17,6 @@ tidy_(x, ...)
 \item{x}{A SummarizedExperiment object}
 
 \item{...}{Additional arguments passed to methods}
-
-\item{object}{A \code{Seurat} object.}
 }
 \value{
 A \code{tidyseurat} object.
