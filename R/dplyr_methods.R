@@ -371,9 +371,11 @@ rowwise.SummarizedExperiment <- function(data, ...) {
 #' 
 #' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
 #' @export
-slice.SummarizedExperiment <- function(.data, ..., .preserve=FALSE) {
+slice.SummarizedExperiment <- function(.data, ..., .by = NULL, .preserve = FALSE) {
   
-    slice_optimised(.data, ..., .preserve=.preserve)
+  .by <- enquo(.by)
+  
+    slice_optimised(.data, ..., .by = !!.by, .preserve = .preserve)
     
     # .data |>
     #     as_tibble(skip_GRanges = T) |>

@@ -44,10 +44,9 @@ ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024).
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/stemangiola/tidySummarizedExperiment}
-  \item Report bugs at \url{https://github.com/stemangiola/tidySummarizedExperiment/issues}
+\item \url{https://github.com/tidyomics/tidySummarizedExperiment}
+\item Report bugs at \url{https://github.com/tidyomics/tidySummarizedExperiment/issues}
 }
-
 }
 \author{
 Stefano Mangiola
