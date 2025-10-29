@@ -7,14 +7,18 @@
 \alias{tidy.RangedSummarizedExperiment}
 \title{tidy for \code{Seurat}}
 \usage{
-tidy_(object)
+tidy_(x, ...)
 
-\method{tidy}{SummarizedExperiment}(object)
+\method{tidy}{SummarizedExperiment}(x, ...)
 
-\method{tidy}{RangedSummarizedExperiment}(object)
+\method{tidy}{RangedSummarizedExperiment}(x, ...)
 }
 \arguments{
-\item{object}{A SummarizedExperiment object}
+\item{x}{A SummarizedExperiment object}
+
+\item{...}{Additional arguments passed to methods}
+
+\item{object}{A \code{Seurat} object.}
 }
 \value{
 A \code{tidyseurat} object.
