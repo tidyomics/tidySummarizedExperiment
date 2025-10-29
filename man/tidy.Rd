@@ -2,18 +2,21 @@
 % Please edit documentation in R/methods.R
 \name{tidy}
 \alias{tidy}
+\alias{tidy_}
 \alias{tidy.SummarizedExperiment}
 \alias{tidy.RangedSummarizedExperiment}
 \title{tidy for \code{Seurat}}
 \usage{
-tidy(object)
+tidy_(x, ...)
 
-\method{tidy}{SummarizedExperiment}(object)
+\method{tidy}{SummarizedExperiment}(x, ...)
 
-\method{tidy}{RangedSummarizedExperiment}(object)
+\method{tidy}{RangedSummarizedExperiment}(x, ...)
 }
 \arguments{
-\item{object}{A SummarizedExperiment object}
+\item{x}{A SummarizedExperiment object}
+
+\item{...}{Additional arguments passed to methods}
 }
 \value{
 A \code{tidyseurat} object.

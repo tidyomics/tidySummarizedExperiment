@@ -41,7 +41,8 @@ Imports:
     fansi,
     stats,
     pkgconfig,
-    plyxp
+    plyxp,
+    generics
 Suggests:
     BiocStyle,
     testthat,
