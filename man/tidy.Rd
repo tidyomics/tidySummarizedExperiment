@@ -2,11 +2,12 @@
 % Please edit documentation in R/methods.R
 \name{tidy}
 \alias{tidy}
+\alias{tidy_}
 \alias{tidy.SummarizedExperiment}
 \alias{tidy.RangedSummarizedExperiment}
 \title{tidy for \code{Seurat}}
 \usage{
-tidy(object)
+tidy_(object)
 
 \method{tidy}{SummarizedExperiment}(object)
 
