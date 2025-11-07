@@ -56,9 +56,9 @@
     attached <- tidyverse_attach()
     
     # Print loading message about printing
-    packageStartupMessage(
-        "tidySummarizedExperiment says: Printing is now handled externally. ",
-        "If you want to visualize the data in a tidy way, do library(tidyprint). ",
-        "See https://github.com/tidyomics/tidyprint for more information."
-    )
+    cli::cli_alert_info(paste0(
+        "tidySummarizedExperiment says: The tidy printing is now handled externally.\n",
+        "If you want to visualize the data in a tidy way, do `library(tidyprint)`.\n",
+        "See `https://github.com/tidyomics/tidyprint` for more information."
+    ))
 }
