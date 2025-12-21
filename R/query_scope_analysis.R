@@ -88,6 +88,10 @@ analyze_expression_dependencies <- function(se, dots) {
   }
   assay_cols <- assayNames(se)
   
+  # Get special column names (canonical only)
+  feature_col <- f_(se)$name  # ".feature"
+  sample_col <- s_(se)$name   # ".sample"
+  
   # Analyze each expression
   expression_deps <- list()
   
@@ -99,6 +103,10 @@ analyze_expression_dependencies <- function(se, dots) {
     
     # Extract variable names from the expression
     expr_text <- rlang::quo_text(dots[[i]])
+    
+    # Check for special columns first (these take precedence)
+    uses_feature_col <- grepl(paste0("\\b", gsub("\\.", "\\\\.", feature_col), "\\b"), expr_text)
+    uses_sample_col  <- grepl(paste0("\\b", gsub("\\.", "\\\\.", sample_col), "\\b"), expr_text)
     
     # Find which variables are referenced
     # Use a simple approach: check which column names appear as whole words
@@ -126,6 +134,10 @@ analyze_expression_dependencies <- function(se, dots) {
       FALSE
     }
     
+    # Special columns indicate data type usage
+    if (uses_feature_col) uses_rowdata <- TRUE
+    if (uses_sample_col) uses_coldata <- TRUE
+    
     # Count dependency types
     n_dep_types <- sum(uses_coldata, uses_rowdata, uses_assays)
     
@@ -145,6 +157,8 @@ analyze_expression_dependencies <- function(se, dots) {
       uses_coldata = uses_coldata,
       uses_rowdata = uses_rowdata,
       uses_assays = uses_assays,
+      uses_feature_id = uses_feature_col,
+      uses_sample_id = uses_sample_col,
       expression_text = expr_text,
       referenced_coldata = if (length(coldata_cols) > 0) coldata_cols[sapply(coldata_cols, function(col) grepl(paste0("\\b", col, "\\b"), expr_text), USE.NAMES = FALSE)] else character(0),
       referenced_rowdata = if (length(rowdata_cols) > 0) rowdata_cols[sapply(rowdata_cols, function(col) grepl(paste0("\\b", col, "\\b"), expr_text), USE.NAMES = FALSE)] else character(0),
@@ -402,11 +416,9 @@ modify_features <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
-  # Apply the operation to rowData
-  modified_rowdata <- rowData(.data) |>
-    tibble::as_tibble(rownames = "rowname__") |>
-    dplyr_fn(...) |>
-    DataFrame_rownames()
+  # Get the special column name for features
+  feature_col <- f_(.data)$name
+  feature_aliases <- feature_col
   
   # Handle operations that might change the number of features
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
@@ -414,25 +426,38 @@ modify_features <- function(.data, operation, ...) {
     # We need to subset the entire SE object accordingly
     
     # Get the row indices that remain after the operation
-    original_rowdata <- rowData(.data) |> tibble::as_tibble(rownames = "rowname__")
-    original_rowdata$.original_index <- seq_len(nrow(original_rowdata))
+    rowdata_tbl <- rowData(.data) |> tibble::as_tibble(rownames = "rowname__")
+    rowdata_tbl$.original_index <- seq_len(nrow(rowdata_tbl))
+    # Add `.feature` column so users can reference it in their expressions
+    if (!feature_col %in% colnames(rowdata_tbl)) rowdata_tbl[[feature_col]] <- rowdata_tbl$rowname__
     
-    filtered_with_index <- original_rowdata |>
-      dplyr_fn(...) 
+    modified_rowdata <- dplyr_fn(rowdata_tbl, ...)
     
     # Subset the entire SE object (works for zero or more features)
-    remaining_indices <- filtered_with_index$.original_index
+    remaining_indices <- modified_rowdata$.original_index
     result_se <- .data[remaining_indices, ]
     
-    # Update rowData with the modified version (without the index column)
-    rowData(result_se) <- filtered_with_index |>
-      dplyr::select(-.original_index) |>
+    # Update rowData with the modified version (without the index and feature columns)
+    rowData(result_se) <- modified_rowdata |>
+      dplyr::select(-.original_index, -dplyr::any_of(feature_aliases)) |>
       DataFrame_rownames()
     
     return(result_se)
     
   } else {
     # Operations that don't change the number of features
+    # Convert rowData to tibble with rownames
+    rowdata_tbl <- rowData(.data) |>
+      tibble::as_tibble(rownames = "rowname__")
+    
+    # Add `.feature` column so users can reference it in their expressions
+    if (!feature_col %in% colnames(rowdata_tbl)) rowdata_tbl[[feature_col]] <- rowdata_tbl$rowname__
+    
+    modified_rowdata <- dplyr_fn(rowdata_tbl, ...) |>
+      # Remove the `.feature` column before converting back (it's not stored in rowData)
+      dplyr::select(-dplyr::any_of(feature_aliases)) |>
+      DataFrame_rownames()
+    
     rowData(.data) <- modified_rowdata
     return(.data)
   }
@@ -477,11 +502,9 @@ modify_samples <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
-  # Apply the operation to colData
-  modified_coldata <- colData(.data) |>
-    tibble::as_tibble(rownames = "rowname__") |>
-    dplyr_fn(...) |>
-    DataFrame_rownames()
+  # Get the special column name for samples
+  sample_col <- s_(.data)$name
+  sample_aliases <- sample_col
   
   # Handle operations that might change the number of samples
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
@@ -489,19 +512,20 @@ modify_samples <- function(.data, operation, ...) {
     # We need to subset the entire SE object accordingly
     
     # Get the row indices that remain after the operation
-    original_coldata <- colData(.data) |> tibble::as_tibble(rownames = "rowname__")
-    original_coldata$.original_index <- seq_len(nrow(original_coldata))
+    coldata_tbl <- colData(.data) |> tibble::as_tibble(rownames = "rowname__")
+    coldata_tbl$.original_index <- seq_len(nrow(coldata_tbl))
+    # Add `.sample` column for filter expressions
+    if (!sample_col %in% colnames(coldata_tbl)) coldata_tbl[[sample_col]] <- coldata_tbl$rowname__
     
-    filtered_with_index <- original_coldata |>
-      dplyr_fn(...) 
+    modified_coldata <- dplyr_fn(coldata_tbl, ...)
     
     # Subset the entire SE object (works for zero or more samples)
-    remaining_indices <- filtered_with_index$.original_index
+    remaining_indices <- modified_coldata$.original_index
     result_se <- .data[, remaining_indices]
     
-    # Update colData with the modified version (without the index column)
-    colData(result_se) <- filtered_with_index |>
-      dplyr::select(-.original_index) |>
+    # Update colData with the modified version (without the index and sample columns)
+    colData(result_se) <- modified_coldata |>
+      dplyr::select(-.original_index, -dplyr::any_of(sample_aliases)) |>
       DataFrame_rownames() 
 
     
@@ -509,6 +533,19 @@ modify_samples <- function(.data, operation, ...) {
     
   } else {
     # Operations that don't change the number of samples
+    # Convert colData to tibble with rownames
+    coldata_tbl <- colData(.data) |>
+      tibble::as_tibble(rownames = "rowname__")
+    
+    # Add `.sample` column so users can reference it in their expressions
+    if (!sample_col %in% colnames(coldata_tbl)) coldata_tbl[[sample_col]] <- coldata_tbl$rowname__
+    
+    # Apply the operation using rlang::exec for proper data masking
+    modified_coldata <- dplyr_fn(coldata_tbl, ...) |>
+      # Remove the `.sample` column before converting back (it's not stored in colData)
+      dplyr::select(-dplyr::any_of(sample_aliases)) |>
+      DataFrame_rownames()
+    
     colData(.data) <- modified_coldata
     return(.data)
   }
