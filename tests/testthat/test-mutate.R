@@ -78,6 +78,34 @@ test_that("mutate handles simple rowData operations correctly", {
     expect_equal(S4Vectors::metadata(result)$latest_mutate_scope_report$scope, "rowdata_only")
 })
 
+test_that("mutate can reference special columns .feature and .sample", {
+    se <- create_airway_test_se()
+    
+    # Test mutating with .feature (should be rowdata_only)
+    result <- se %>% mutate(ensg = .feature)
+    expect_true("ensg" %in% colnames(rowData(result)))
+    expect_equal(rowData(result)$ensg, rownames(se))
+    expect_equal(S4Vectors::metadata(result)$latest_mutate_scope_report$scope, "rowdata_only")
+    
+    # Test mutating with .sample (should be coldata_only)
+    result <- se %>% mutate(sample_id = .sample)
+    expect_true("sample_id" %in% colnames(colData(result)))
+    expect_equal(colData(result)$sample_id, colnames(se))
+    expect_equal(S4Vectors::metadata(result)$latest_mutate_scope_report$scope, "coldata_only")
+    
+    # Test using .feature in a more complex expression
+    result <- se %>% mutate(feature_label = paste0("gene_", .feature))
+    expect_true("feature_label" %in% colnames(rowData(result)))
+    expect_equal(rowData(result)$feature_label, paste0("gene_", rownames(se)))
+    expect_equal(S4Vectors::metadata(result)$latest_mutate_scope_report$scope, "rowdata_only")
+    
+    # Test using .sample in a more complex expression
+    result <- se %>% mutate(sample_label = paste0("sample_", .sample))
+    expect_true("sample_label" %in% colnames(colData(result)))
+    expect_equal(colData(result)$sample_label, paste0("sample_", colnames(se)))
+    expect_equal(S4Vectors::metadata(result)$latest_mutate_scope_report$scope, "coldata_only")
+})
+
 test_that("mutate handles simple assay operations correctly", {
     se <- create_airway_test_se()
     
