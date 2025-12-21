@@ -808,6 +808,7 @@ get_count_datasets <- function(se) {
 }
 
 get_needed_columns <- function(.data) {
+  # Key columns (rownames/colnames) are view-only and must not be mutated/renamed.
   c(f_(.data)$name, s_(.data)$name)
 }
 
@@ -1211,15 +1212,14 @@ sample__ <- get_special_column_name_symbol(".sample")
 
 #' @importFrom S4Vectors metadata
 f_ <- function(x) {
-  # Check if old deprecated columns are used
-  if ("feature__" %in% names(metadata(x))) feature__ = metadata(x)$feature__
-  return(feature__)
+  # Canonical feature id column name (legacy aliases are not supported)
+  feature__
 }
 
 #' @importFrom S4Vectors metadata
 s_ <- function(x) {
-  if ("sample__" %in% names(metadata(x))) sample__ = metadata(x)$sample__
-  return(sample__)
+  # Canonical sample id column name (legacy aliases are not supported)
+  sample__
 }
 
 split_SummarizedExperiment_by_feature_to_list <- function(.data) {

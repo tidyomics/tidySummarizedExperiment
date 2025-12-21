@@ -148,12 +148,23 @@ mutate.SummarizedExperiment <- function(.data, ...) {
         # Check for scope and dispatch elegantly
         scope_report <- analyze_query_scope_mutate(.data, ...)
         scope <- scope_report$scope
+        
+        # If `.feature` / `.sample` (or legacy `feature` / `sample`) are referenced in a mixed-scope
+        # expression, prefer the tibble-based fallback instead of plyxp (plyxp has no native concept
+        # of row/col identifiers as pseudo-columns).
+        uses_special_ids <- FALSE
+        if (!is.null(scope_report$expression_dependencies)) {
+          uses_special_ids <- any(vapply(scope_report$expression_dependencies, function(dep) {
+            isTRUE(dep$uses_feature_id) || isTRUE(dep$uses_sample_id)
+          }, logical(1)))
+        }
 
         result <-
         if(scope == "coldata_only") modify_samples(.data, "mutate", ...)
         else if(scope == "rowdata_only") modify_features(.data, "mutate", ...)
         else if(scope == "assay_only") mutate_assay(.data, ...)
-        else if(scope == "mixed") modify_se_plyxp(.data, "mutate", scope_report, ...)
+        else if(scope == "mixed" && !uses_special_ids) modify_se_plyxp(.data, "mutate", scope_report, ...)
+        else if(scope == "mixed" && uses_special_ids) mutate_via_tibble(.data, ...)
         else mutate_via_tibble(.data, ...)
 
         # Record latest mutate scope into metadata for testing/introspection
@@ -232,8 +243,30 @@ mutate_via_tibble <- function(.data, ...) {
         cols |>
         not()
     
-    return(.data |>
-        as_tibble(skip_GRanges=skip_GRanges) |>
-        dplyr::mutate(...) |>
-        update_SE_from_tibble(.data))
+    tbl <- .data |>
+        as_tibble(skip_GRanges=skip_GRanges)
+    
+    # Ensure `.feature`/`.sample` are available during evaluation.
+    key_feature <- f_(.data)$name
+    key_sample <- s_(.data)$name
+    added_aliases <- character(0)
+    
+    if (!".feature" %in% colnames(tbl) && key_feature %in% colnames(tbl)) {
+        tbl[[".feature"]] <- tbl[[key_feature]]
+        added_aliases <- c(added_aliases, ".feature")
+    }
+    if (!".sample" %in% colnames(tbl) && key_sample %in% colnames(tbl)) {
+        tbl[[".sample"]] <- tbl[[key_sample]]
+        added_aliases <- c(added_aliases, ".sample")
+    }
+    
+    tbl <- tbl |>
+        dplyr::mutate(...)
+    
+    # Drop aliases we injected so they never get written back into rowData/colData
+    if (length(added_aliases) > 0) {
+        tbl <- tbl |> dplyr::select(-dplyr::any_of(added_aliases))
+    }
+    
+    return(update_SE_from_tibble(tbl, .data))
 }
