@@ -460,3 +460,29 @@ test_that("scope detection works correctly through mutate interface", {
     scope_result <- tidySummarizedExperiment:::analyze_query_scope_mutate(se, test_col = counts)
     expect_equal(scope_result$scope, "assay_only")
 })
+
+context("AnnotationDbi mapIds with mutate")
+
+library(tidySummarizedExperiment)
+library(SummarizedExperiment)
+
+test_that("mutate maps ENSEMBL to SYMBOL via AnnotationDbi", {
+    skip_if_not_installed("AnnotationDbi")
+    skip_if_not_installed("org.Hs.eg.db")
+
+    counts <- matrix(c(1L, 2L, 3L, 4L), nrow = 2,
+                     dimnames = list(c("ENSG00000141510", "ENSG00000012048"),
+                                     c("S1", "S2")))
+    se <- SummarizedExperiment(assays = list(counts = counts))
+
+    se2 <- se |>
+        mutate(symbol = AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db,
+                                              keys = .feature,
+                                              keytype = "ENSEMBL",
+                                              column = "SYMBOL",
+                                              multiVals = "first"))
+
+    expect_true("symbol" %in% colnames(rowData(se2)))
+    expect_equal(as.character(rowData(se2)$symbol), c("TP53", "BRCA1"))
+})
+

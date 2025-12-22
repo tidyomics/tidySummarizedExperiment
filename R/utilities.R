@@ -615,99 +615,85 @@ get_special_datasets <- function(se) {
 
 check_se_dimnames <- function(se) {
 
-    # Stop if any column or row names are duplicated
-    if (check_if_any_dimnames_duplicated(se, dim = "cols")) {
-        stop("tidySummarizedExperiment says: some column names are duplicated")
-    }
-    if (check_if_any_dimnames_duplicated(se, dim = "rows")) {
-        stop("tidySummarizedExperiment says: some row names are duplicated")
-    }
-
-    # Stop if column names of assays do not overlap, or if some assays have 
-    # column names and others don't
-    if (check_if_assays_are_NOT_overlapped(se, dim = "cols")) { 
-        warning( 
-            "tidySummarizedExperiment says: at least one of the assays in your SummarizedExperiment have column names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples." 
+    # If the assays have dimnames but the SE does not, set the SE dimnames to
+    # those of the first assay with dimnames (this is a common edge case).
+    if (is.null(colnames(se)) && length(assays(se)) > 0) {
+        cn <- vapply(
+            assays(se, withDimnames = FALSE),
+            function(x) !is.null(colnames(x)),
+            FALSE
         )
-    }
-    # Same for row names
-    if (check_if_assays_are_NOT_overlapped(se, dim = "rows")) { 
-        warning( 
-            "tidySummarizedExperiment says: at least one of the assays in your SummarizedExperiment have row names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features." 
-        )
-    }
-    
-    # If the assays have dimnames but the SE does not, throw a warning and set 
-    # the dimnames of the SE to those of the first assay with dimnames.
-    # (At this point we know that all assays have the same dimnames (could be 
-    # NULL), but they could be in different order)
-    if (is.null(colnames(se)) && 
-        length(assays(se)) > 0) {
-        cn <- vapply(assays(se, withDimnames = FALSE), function(x) !is.null(colnames(x)), FALSE)
         if (any(cn)) {
             idx <- which(cn)[1]
             warning(
-                "tidySummarizedExperiment says: the assays in your SummarizedExperiment have column names, but the SummarizedExperiment does not. Setting colnames(se) to column names of first assay with column names (assay ", idx, ")."
+                "tidySummarizedExperiment says: the assays in your SummarizedExperiment have column names, but the SummarizedExperiment does not. Setting colnames(se) to column names of first assay with column names (assay ",
+                idx, ")."
             )
             colnames(se) <- colnames(assays(se, withDimnames = FALSE)[[idx]])
         }
     }
-    if (is.null(rownames(se)) && 
-        length(assays(se)) > 0) {
-        rn <- vapply(assays(se, withDimnames = FALSE), function(x) !is.null(rownames(x)), FALSE)
+    if (is.null(rownames(se)) && length(assays(se)) > 0) {
+        rn <- vapply(
+            assays(se, withDimnames = FALSE),
+            function(x) !is.null(rownames(x)),
+            FALSE
+        )
         if (any(rn)) {
             idx <- which(rn)[1]
             warning(
-                "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but the SummarizedExperiment does not. Setting rownames(se) to row names of first assay with row names (assay ", idx, ")."
+                "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but the SummarizedExperiment does not. Setting rownames(se) to row names of first assay with row names (assay ",
+                idx, ")."
             )
             rownames(se) <- rownames(assays(se, withDimnames = FALSE)[[idx]])
         }
     }
-    
-    # If the assays as well as the SE have dimnames, but they don't overlap 
-    # (they may be in different order), throw an error.
+
+    # Repair duplicated dimnames (common after base::cbind()/rbind()).
+    if (!is.null(colnames(se)) && any(duplicated(colnames(se)))) {
+        warning("tidySummarizedExperiment says: some column names are duplicated; making them unique.")
+        unique_colnames <- make.unique(colnames(se), sep = "_")
+        colnames(se) <- unique_colnames
+    }
+    if (!is.null(rownames(se)) && any(duplicated(rownames(se)))) {
+        warning("tidySummarizedExperiment says: some row names are duplicated; making them unique.")
+        unique_rownames <- make.unique(rownames(se), sep = "_")
+        rownames(se) <- unique_rownames
+    }
+
+    # Warn if column names of assays do not overlap, or if some assays have
+    # column names and others don't
+    if (check_if_assays_are_NOT_overlapped(se, dim = "cols")) {
+        warning(
+            "tidySummarizedExperiment says: at least one of the assays in your SummarizedExperiment have column names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
+        )
+    }
+    # Same for row names
+    if (check_if_assays_are_NOT_overlapped(se, dim = "rows")) {
+        warning(
+            "tidySummarizedExperiment says: at least one of the assays in your SummarizedExperiment have row names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
+        )
+    }
+
+    # If the assays as well as the SE have dimnames, but they don't overlap
+    # (they may be in different order), warn.
     if (!is.null(colnames(se)) &&
-        length(assays(se)) > 0 && 
-        !is.null(colnames(assays(se, withDimnames = FALSE)[[1]])) && 
+        length(assays(se)) > 0 &&
+        !is.null(colnames(assays(se, withDimnames = FALSE)[[1]])) &&
         !all(colnames(assays(se, withDimnames = FALSE)[[1]]) %in% colnames(se))) {
         warning(
             "tidySummarizedExperiment says: the assays in your SummarizedExperiment have column names, but they don't agree with the column names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
         )
+    }
+    if (!is.null(rownames(se)) &&
+        length(assays(se)) > 0 &&
+        !is.null(rownames(assays(se, withDimnames = FALSE)[[1]])) &&
+        !all(rownames(assays(se, withDimnames = FALSE)[[1]]) %in% rownames(se))) {
+        warning(
+            "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but they don't agree with the row names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
+        )
+    }
 
-    }
-  
-  if (is.null(rownames(se)) && 
-      length(assays(se)) > 0) {
-    rn <- vapply(assays(se, withDimnames = FALSE), function(x) !is.null(rownames(x)), FALSE)
-    if (any(rn)) {
-      idx <- which(rn)[1]
-      warning(
-        "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but the SummarizedExperiment does not. Setting rownames(se) to row names of first assay with row names (assay ", idx, ")."
-      )
-      rownames(se) <- rownames(assays(se, withDimnames = FALSE)[[idx]])
-    }
-  }
-  
-  # If the assays as well as the SE have dimnames, but they don't overlap 
-  # (they may be in different order), throw an error.
-  if (!is.null(colnames(se)) &&
-      length(assays(se)) > 0 && 
-      !is.null(colnames(assays(se, withDimnames = FALSE)[[1]])) && 
-      !all(colnames(assays(se, withDimnames = FALSE)[[1]]) %in% colnames(se))) {
-    warning(
-      "tidySummarizedExperiment says: the assays in your SummarizedExperiment have column names, but they don't agree with the column names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
-    )
-  }
-  if (!is.null(rownames(se)) &&
-      length(assays(se)) > 0 && 
-      !is.null(rownames(assays(se, withDimnames = FALSE)[[1]])) && 
-      !all(rownames(assays(se, withDimnames = FALSE)[[1]]) %in% rownames(se))) {
-    warning(
-      "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but they don't agree with the row names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
-    )
-  }
-  
-  se
+    se
 }
 
 #' @importFrom tidyr gather
@@ -722,11 +708,33 @@ check_se_dimnames <- function(se) {
 get_count_datasets <- function(se) { 
   # Check that dimnames are consistent
   se <- check_se_dimnames(se)
+
+  # Decide whether we must enforce dimnames by position across all assays.
+  # If any assay is missing dimnames or has duplicated dimnames, name-based
+  # alignment becomes unsafe/ambiguous; in that case we align by position using
+  # the (possibly repaired) SE dimnames.
+  assays_list_raw <- assays(se, withDimnames = FALSE) %>% as.list()
+  force_rows_by_position <-
+    !is.null(rownames(se)) &&
+    length(assays_list_raw) > 0 &&
+    any(vapply(
+      assays_list_raw,
+      function(a) is.null(rownames(a)) || any(duplicated(rownames(a))),
+      FALSE
+    ))
+  force_cols_by_position <-
+    !is.null(colnames(se)) &&
+    length(assays_list_raw) > 0 &&
+    any(vapply(
+      assays_list_raw,
+      function(a) is.null(colnames(a)) || any(duplicated(colnames(a))),
+      FALSE
+    ))
   
   # Join assays
   list_assays = 
     map2( 
-    assays(se, withDimnames = FALSE) %>% as.list(),
+    assays_list_raw,
     names(assays(se)),
     ~ {
       
@@ -737,19 +745,28 @@ get_count_datasets <- function(se) {
         .x <- as.matrix(.x) 
       }
       
-      # Rearrange if assays has colnames and rownames
-      if (!is.null(rownames(se)) && !is.null(rownames(.x)) && 
+      # Rearrange if assays has colnames and rownames (safe only when unique)
+      if (!force_rows_by_position &&
+          !is.null(rownames(se)) && !is.null(rownames(.x)) &&
+          !any(duplicated(rownames(.x))) &&
           all(rownames(se) %in% rownames(.x))) {
         .x = .x[rownames(se), , drop = FALSE]
       }
-      if (!is.null(colnames(se)) && !is.null(colnames(.x)) && 
+      if (!force_cols_by_position &&
+          !is.null(colnames(se)) && !is.null(colnames(.x)) &&
+          !any(duplicated(colnames(.x))) &&
           all(colnames(se) %in% colnames(.x))) {
         .x = .x[, colnames(se), drop = FALSE]
       }
       
-      # If I don't have assay colnames and rownames add them
-      if (!is.null(rownames(se)) && is.null(rownames(.x))) rownames(.x) = rownames(se) 
-      if (!is.null(colnames(se)) && is.null(colnames(.x))) colnames(.x) = colnames(se) 
+      # Ensure assay dimnames match the (possibly repaired) SE dimnames by position
+      # when any assay is missing/duplicated dimnames (global decision above).
+      if (force_rows_by_position && nrow(.x) == nrow(se)) {
+        rownames(.x) <- rownames(se)
+      }
+      if (force_cols_by_position && ncol(.x) == ncol(se)) {
+        colnames(.x) <- colnames(se)
+      }
       
       .x = 
         .x %>%

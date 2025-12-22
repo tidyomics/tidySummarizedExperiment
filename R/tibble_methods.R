@@ -37,6 +37,12 @@ as_tibble.SummarizedExperiment <- function(x, ...,
     rownames=pkgconfig::get_config("tibble::rownames", NULL)) {
   
     .subset <- enquo(.subset)
+
+    # Ensure SummarizedExperiment dimnames are consistent before any conversion.
+    # This is important because colData()/rowData() conversion can implicitly
+    # repair duplicated rownames using base::make.unique() (with '.'), which can
+    # desynchronize them from assay/sample identifiers.
+    x <- check_se_dimnames(x)
   
     sample_info <-
         colData(x) %>%

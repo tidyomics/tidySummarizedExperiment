@@ -1,4 +1,4 @@
-test_that("get_count_datasets works", {
+test_that("tidySummarizedExperiment:::get_count_datasets works", {
     # Use testthat edition 3
     local_edition(3)
     
@@ -34,7 +34,7 @@ test_that("get_count_datasets works", {
     expect_equal(assay(se, "mat3")[, 3], c(25, 26, 27), ignore_attr = TRUE)
     
     # SE and all assays have the same dimnames
-    cds <- get_count_datasets(se)
+    cds <- tidySummarizedExperiment:::get_count_datasets(se)
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -52,7 +52,7 @@ test_that("get_count_datasets works", {
     expect_equal(rownames(assay(se1, "mat1", withDimnames = FALSE)), paste0("G", seq_len(3)))
     expect_null(colnames(se1))
     expect_null(rownames(se1))
-    expect_warning(expect_warning(cds <- get_count_datasets(se1), "have column names, but the SummarizedExperiment does not"), "have row names, but the SummarizedExperiment does not")
+    expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "have column names, but the SummarizedExperiment does not"), "have row names, but the SummarizedExperiment does not")
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -69,7 +69,7 @@ test_that("get_count_datasets works", {
     rownames(se1) <- colnames(se1) <- NULL
     rownames(assay(se1, "mat2", withDimnames = FALSE)) <- 
         colnames(assay(se1, "mat2", withDimnames = FALSE)) <- NULL
-    expect_warning(expect_warning(expect_warning(expect_warning(cds <- get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have column names"))))
+    expect_warning(expect_warning(expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have column names"))))
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -86,7 +86,7 @@ test_that("get_count_datasets works", {
     rownames(se1) <- colnames(se1) <- NULL
     rownames(assay(se1, "mat1", withDimnames = FALSE)) <- 
         colnames(assay(se1, "mat1", withDimnames = FALSE)) <- NULL
-    expect_warning(expect_warning(expect_warning(expect_warning(cds <- get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have column names"))))
+    expect_warning(expect_warning(expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have column names"))))
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -102,7 +102,7 @@ test_that("get_count_datasets works", {
     rownames(se1) <- colnames(se1) <- NULL
     colnames(assay(se1, "mat2", withDimnames = FALSE)) <- c("S2", "S3", "S1")
     rownames(assay(se1, "mat3", withDimnames = FALSE)) <- c("G2", "G3", "G1")
-    expect_warning(expect_warning(cds <- get_count_datasets(se1)))
+    expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1)))
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -118,7 +118,7 @@ test_that("get_count_datasets works", {
     se1 <- se
     rownames(se1) <- colnames(se1) <- NULL
     rownames(assay(se1, "mat2", withDimnames = FALSE)) <- paste0("A", seq_len(3))
-    expect_warning(expect_warning(expect_warning(cds <- get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have row names")))
+    expect_warning(expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have row names")))
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 18L)
     expect_equal(ncol(cds), 5L)
@@ -134,7 +134,7 @@ test_that("get_count_datasets works", {
     se1 <- se
     rownames(se1) <- colnames(se1) <- NULL
     colnames(assay(se1, "mat2", withDimnames = FALSE)) <- paste0("A", seq_len(3))
-    expect_warning(expect_warning(expect_warning(cds <- get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have column names")))
+    expect_warning(expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "at least one of the assays in your SummarizedExperiment have column names")))
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 18L)
     expect_equal(ncol(cds), 5L)
@@ -152,7 +152,7 @@ test_that("get_count_datasets works", {
     colnames(assay(se1, "mat1", withDimnames = FALSE)) <- NULL
     colnames(assay(se1, "mat2", withDimnames = FALSE)) <- NULL
     colnames(assay(se1, "mat3", withDimnames = FALSE)) <- NULL
-    cds <- get_count_datasets(se1)
+    cds <- tidySummarizedExperiment:::get_count_datasets(se1)
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -169,7 +169,7 @@ test_that("get_count_datasets works", {
     rownames(assay(se1, "mat1", withDimnames = FALSE)) <- NULL
     rownames(assay(se1, "mat2", withDimnames = FALSE)) <- NULL
     rownames(assay(se1, "mat3", withDimnames = FALSE)) <- NULL
-    cds <- get_count_datasets(se1)
+    cds <- tidySummarizedExperiment:::get_count_datasets(se1)
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -190,7 +190,7 @@ test_that("get_count_datasets works", {
     colnames(assay(se1, "mat2", withDimnames = FALSE)) <- NULL
     rownames(assay(se1, "mat3", withDimnames = FALSE)) <- NULL
     colnames(assay(se1, "mat3", withDimnames = FALSE)) <- NULL
-    cds <- get_count_datasets(se1)
+    cds <- tidySummarizedExperiment:::get_count_datasets(se1)
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -204,7 +204,7 @@ test_that("get_count_datasets works", {
     # SE has dimnames, assays have the same dimnames but not overlapping with those of the SE
     se1 <- se
     rownames(se1) <- colnames(se1) <- paste0("A", seq_len(3))
-    expect_warning(expect_warning(cds <- get_count_datasets(se1), "don't agree with the column names of the SummarizedExperiment"))
+    expect_warning(expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "don't agree with the column names of the SummarizedExperiment"))
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -217,7 +217,7 @@ test_that("get_count_datasets works", {
     
     se1 <- se
     rownames(se1) <- paste0("A", seq_len(3))
-    expect_warning(cds <- get_count_datasets(se1), "don't agree with the row names of the SummarizedExperiment")
+    expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "don't agree with the row names of the SummarizedExperiment")
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -236,7 +236,7 @@ test_that("get_count_datasets works", {
     colnames(assay(se1, "mat2", withDimnames = FALSE)) <- NULL
     rownames(assay(se1, "mat3", withDimnames = FALSE)) <- NULL
     colnames(assay(se1, "mat3", withDimnames = FALSE)) <- NULL
-    cds <- get_count_datasets(se1)
+    cds <- tidySummarizedExperiment:::get_count_datasets(se1)
     expect_s3_class(cds, "tbl_df")
     expect_equal(nrow(cds), 9L)
     expect_equal(ncol(cds), 5L)
@@ -259,7 +259,9 @@ test_that("get_count_datasets works", {
     expect_equal(colnames(assay(se1, "mat3", withDimnames = FALSE)), paste0("S", seq_len(3)))
     expect_null(colnames(se1))
     expect_null(rownames(se1))
-    expect_error(cds <- get_count_datasets(se1), "some column names are duplicated")
+    expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "some column names are duplicated")
+    expect_s3_class(cds, "tbl_df")
+    expect_equal(nrow(cds), 9L)
     
     # SE does not have dimnames, one assay has duplicated rownames, one has no rownames
     se1 <- se
@@ -273,19 +275,25 @@ test_that("get_count_datasets works", {
     expect_equal(rownames(assay(se1, "mat3", withDimnames = FALSE)), paste0("G", seq_len(3)))
     expect_null(colnames(se1))
     expect_null(rownames(se1))
-    expect_error(cds <- get_count_datasets(se1), "some row names are duplicated")
+    expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "some row names are duplicated")
+    expect_s3_class(cds, "tbl_df")
+    expect_equal(nrow(cds), 9L)
     
     # SE has duplicated colnames
     se1 <- se
     colnames(se1) <- paste0("S", c(1, 1, 1))
-    expect_error(cds <- get_count_datasets(se1), "some column names are duplicated")
+    expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "some column names are duplicated")
+    expect_s3_class(cds, "tbl_df")
+    expect_equal(nrow(cds), 9L)
     expect_true(check_if_any_dimnames_duplicated(se1, dim = "cols"))
     expect_false(check_if_any_dimnames_duplicated(se1, dim = "rows"))
     
     # SE has duplicated rownames
     se1 <- se
     rownames(se1) <- paste0("G", c(1, 2, 1))
-    expect_error(cds <- get_count_datasets(se1), "some row names are duplicated")
+    expect_warning(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "some row names are duplicated")
+    expect_s3_class(cds, "tbl_df")
+    expect_equal(nrow(cds), 9L)
     expect_false(check_if_any_dimnames_duplicated(se1, dim = "cols"))
     expect_true(check_if_any_dimnames_duplicated(se1, dim = "rows"))
     
@@ -340,7 +348,7 @@ test_that("get_count_datasets works", {
     #         matrix(seq(19, 27), nrow = 3)
     #     )
     # )
-    # expect_error(cds <- get_count_datasets(se1), "assays must be named")
+    # expect_error(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "assays must be named")
     # 
     # se1 <- SummarizedExperiment::SummarizedExperiment(
     #     assays = list(
@@ -349,5 +357,5 @@ test_that("get_count_datasets works", {
     #         matrix(seq(19, 27), nrow = 3)
     #     )
     # )
-    # expect_error(cds <- get_count_datasets(se1), "assays must be named")
+    # expect_error(cds <- tidySummarizedExperiment:::get_count_datasets(se1), "assays must be named")
 })
