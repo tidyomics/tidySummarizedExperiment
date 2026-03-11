@@ -34,6 +34,8 @@
 <url><loc>/reference/select.html</loc></url>
 <url><loc>/reference/separate.html</loc></url>
 <url><loc>/reference/slice.html</loc></url>
+<url><loc>/reference/subset_feature_data-methods.html</loc></url>
+<url><loc>/reference/subset_sample_data-methods.html</loc></url>
 <url><loc>/reference/summarise.html</loc></url>
 <url><loc>/reference/tidy.html</loc></url>
 <url><loc>/reference/tidySummarizedExperiment-package.html</loc></url>

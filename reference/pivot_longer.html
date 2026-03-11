@@ -20,7 +20,7 @@ Learn more in vignette("pivot").'><!-- mathjax --><script src="https://cdnjs.clo
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
       </span>
     </div>
 
@@ -54,7 +54,7 @@ Learn more in vignette("pivot").'><!-- mathjax --><script src="https://cdnjs.clo
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Pivot data from wide to long</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/tidyr_methods.R" class="external-link"><code>R/tidyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/fix-mutate-using-special-columns/R/tidyr_methods.R" class="external-link"><code>R/tidyr_methods.R</code></a></small>
     <div class="hidden name"><code>pivot_longer.Rd</code></div>
     </div>
 
@@ -190,7 +190,7 @@ existing column names.</p></dd>
 
 <dt id="arg-values-drop-na">values_drop_na<a class="anchor" aria-label="anchor" href="#arg-values-drop-na"></a></dt>
 <dd><p>If <code>TRUE</code>, will drop rows that contain only <code>NA</code>s
-in the <code>value_to</code> column. This effectively converts explicit missing values
+in the <code>values_to</code> column. This effectively converts explicit missing values
 to implicit missing values, and should generally be used only when missing
 values in <code>data</code> were created by its structure.</p></dd>
 

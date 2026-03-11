@@ -28,7 +28,7 @@ each group."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
       </span>
     </div>
 
@@ -62,7 +62,7 @@ each group."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Subset rows using their positions</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/fix-mutate-using-special-columns/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
     <div class="hidden name"><code>slice.Rd</code></div>
     </div>
 
@@ -103,16 +103,14 @@ Indices beyond the number of rows in the input are silently ignored.</p>
 
 
 <dt id="arg--by">.by<a class="anchor" aria-label="anchor" href="#arg--by"></a></dt>
-<dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#experimental" class="external-link"><img src="figures/lifecycle-experimental.svg" alt="[Experimental]"></a></p>
-<p>&lt;<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a></code>&gt; Optionally, a selection of columns to
+<dd><p>&lt;<code><a href="https://dplyr.tidyverse.org/reference/dplyr_tidy_select.html" class="external-link">tidy-select</a></code>&gt; Optionally, a selection of columns to
 group by for just this operation, functioning as an alternative to <code><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by()</a></code>. For
 details and examples, see <a href="https://dplyr.tidyverse.org/reference/dplyr_by.html" class="external-link">?dplyr_by</a>.</p></dd>
 
 
 <dt id="arg--preserve">.preserve<a class="anchor" aria-label="anchor" href="#arg--preserve"></a></dt>
-<dd><p>Relevant when the <code>.data</code> input is grouped.
-If <code>.preserve = FALSE</code> (the default), the grouping structure
-is recalculated based on the resulting data, otherwise the grouping is kept as is.</p></dd>
+<dd><p>Relevant when the <code>.data</code> input is grouped. If <code>.preserve = FALSE</code> (the default), the grouping structure is recalculated based on the
+resulting data, otherwise the grouping is kept as is.</p></dd>
 
 </dl></div>
     <div id="value">
@@ -128,6 +126,11 @@ properties:</p><ul><li><p>Each row may appear 0, 1, or many times in the output.
     <p>Slice does not work with relational databases because they have no
 intrinsic notion of row order. If you want to perform the equivalent
 operation, use <code><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter()</a></code> and <code><a href="https://dplyr.tidyverse.org/reference/row_number.html" class="external-link">row_number()</a></code>.</p>
+<p>For <code>slice_sample()</code>, note that the weights provided in <code>weight_by</code> are
+passed through to the <code>prob</code> argument of <code><a href="https://rdrr.io/r/base/sample.html" class="external-link">base::sample.int()</a></code>. This means
+they cannot be used to reconstruct summary statistics from the underlying
+population. See <a href="https://stats.stackexchange.com/q/639211/" class="external-link">this discussion</a>
+for more details.</p>
     </div>
     <div id="methods">
     <h2>Methods</h2>

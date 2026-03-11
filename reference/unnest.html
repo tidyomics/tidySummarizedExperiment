@@ -17,7 +17,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.1</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
       </span>
     </div>
 
@@ -51,7 +51,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Unnest a list-column of data frames into rows and columns</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/tidyr_methods.R" class="external-link"><code>R/tidyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/fix-mutate-using-special-columns/R/tidyr_methods.R" class="external-link"><code>R/tidyr_methods.R</code></a></small>
     <div class="hidden name"><code>unnest.Rd</code></div>
     </div>
 
@@ -106,11 +106,11 @@ to their common size.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a>:
-previously you could write <code>df %&gt;% unnest(x, y, z)</code>.
-Convert to <code>df %&gt;% unnest(c(x, y, z))</code>. If you previously created a new
+previously you could write <code>df |&gt; unnest(x, y, z)</code>.
+Convert to <code>df |&gt; unnest(c(x, y, z))</code>. If you previously created a new
 variable in <code>unnest()</code> you'll now need to do it explicitly with <code><a href="mutate.html">mutate()</a></code>.
-Convert <code>df %&gt;% unnest(y = fun(x, y, z))</code>
-to <code>df %&gt;% mutate(y = fun(x, y, z)) %&gt;% unnest(y)</code>.</p></dd>
+Convert <code>df |&gt; unnest(y = fun(x, y, z))</code>
+to <code>df |&gt; mutate(y = fun(x, y, z)) |&gt; unnest(y)</code>.</p></dd>
 
 
 <dt id="arg-keep-empty">keep_empty<a class="anchor" aria-label="anchor" href="#arg-keep-empty"></a></dt>
@@ -157,7 +157,7 @@ unnesting.</p></dd>
 
 <dt id="arg--id">.id<a class="anchor" aria-label="anchor" href="#arg--id"></a></dt>
 <dd><p><a href="https://lifecycle.r-lib.org/articles/stages.html#deprecated" class="external-link"><img src="figures/lifecycle-deprecated.svg" alt="[Deprecated]"></a>:
-convert <code>df %&gt;% unnest(x, .id = "id")</code> to <code>df %&gt;% mutate(id = names(x)) %&gt;% unnest(x))</code>.</p></dd>
+convert <code>df |&gt; unnest(x, .id = "id")</code> to <code>df |&gt; mutate(id = names(x)) |&gt; unnest(x))</code>.</p></dd>
 
 
 <dt id="arg--sep">.sep<a class="anchor" aria-label="anchor" href="#arg--sep"></a></dt>
