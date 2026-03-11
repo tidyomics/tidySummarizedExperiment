@@ -46,6 +46,7 @@ Imports:
 Suggests:
     AnnotationDbi,
     BiocStyle,
+    microbenchmark,
     org.Hs.eg.db,
     testthat,
     knitr,
