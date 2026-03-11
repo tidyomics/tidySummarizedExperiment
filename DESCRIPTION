@@ -1,7 +1,7 @@
 Type: Package
 Package: tidySummarizedExperiment
 Title: Brings SummarizedExperiment to the Tidyverse 
-Version: 1.20.2
+Version: 1.20.3
 Authors@R: c(person("Stefano", "Mangiola", email = "mangiolastefano@gmail.com",
                   role = c("aut", "cre")) )
 Author: Stefano Mangiola [aut, cre] <mangiolastefano@gmail.com>
@@ -44,7 +44,10 @@ Imports:
     plyxp,
     generics
 Suggests:
+    AnnotationDbi,
     BiocStyle,
+    microbenchmark,
+    org.Hs.eg.db,
     testthat,
     knitr,
     markdown,
