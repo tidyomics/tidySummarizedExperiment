@@ -12,7 +12,6 @@
 #' 
 #' @importFrom purrr reduce
 #' @importFrom purrr map
-#' @importFrom purrr when
 #' @importFrom tidyr spread
 #' @importFrom stats setNames
 #' @importFrom tibble enframe
@@ -54,13 +53,13 @@ as_tibble.SummarizedExperiment <- function(x, ...,
         tibble::as_tibble(rownames=s_(x)$name) %>% 
         setNames(c(s_(x)$name, colnames(colData(x))))
   
-    range_info <-
-        skip_GRanges %>%
-        when(
-            (.) ~ tibble() %>% list,
-            ~  get_special_datasets(x) 
-        ) %>%
-        reduce(left_join, by="coordinate") 
+    range_list <- if (skip_GRanges) {
+        list(tibble())
+    } else {
+        get_special_datasets(x)
+    }
+
+    range_info <- reduce(range_list, left_join, by = "coordinate")
     
     gene_info <-
         rowData(x) %>% 
@@ -78,12 +77,17 @@ as_tibble.SummarizedExperiment <- function(x, ...,
     if (quo_is_null(.subset))
     
         # If I want to return all columns
-        count_info %>%
-            full_join(sample_info, by=s_(x)$name) %>%
-            full_join(gene_info, by=f_(x)$name) %>%
-            when(nrow(range_info) > 0 ~ 
-                (.) %>% left_join(range_info) %>% suppressMessages(),
-                ~ (.)) 
+        {
+            out <- count_info %>%
+                full_join(sample_info, by = s_(x)$name) %>%
+                full_join(gene_info, by = f_(x)$name)
+            
+            if (nrow(range_info) > 0) {
+                out <- out %>% left_join(range_info) %>% suppressMessages()
+            }
+            
+            out
+        }
     
     # This function outputs a tibble after subsetting the columns
     else subset_tibble_output(x, count_info, sample_info,

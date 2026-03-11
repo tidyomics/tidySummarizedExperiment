@@ -24,19 +24,16 @@ bind_rows.SummarizedExperiment <- function(..., .id=NULL, add.cell.ids=NULL) {
     )
     tts <- flatten_if(dots_values(...), is_spliced)
 
-    new_obj <- 
-        tts %>%
-            when(
-                is_split_by_sample(.) & is_split_by_transcript(.) ~ 
-                    stop("tidySummarizedExperiment says:",
-                        " bind_rows cannot be applied to splits both by",
-                        " sample- and feature-wise information"),
-                is_split_by_sample(.) ~ cbind(.[[1]], .[[2]]) ,
-                is_split_by_transcript(.) ~ rbind(.[[1]], .[[2]]),
-            
-                # If there is not split, then bind the samples
-                ~ cbind(.[[1]], .[[2]])
-            )
+    if (is_split_by_sample(tts) && is_split_by_transcript(tts)) {
+        stop("tidySummarizedExperiment says: bind_rows cannot be applied to splits both by sample- and feature-wise information")
+    }
+    new_obj <- if (is_split_by_sample(tts)) {
+        cbind(tts[[1]], tts[[2]])
+    } else if (is_split_by_transcript(tts)) {
+        rbind(tts[[1]], tts[[2]])
+    } else {
+        cbind(tts[[1]], tts[[2]])
+    }
     
 
     # If duplicated sample names
@@ -169,28 +166,20 @@ bind_cols_internal <- function(..., .id=NULL, column_belonging=NULL) {
     }
     
     # If I DON'T have column corresponding go through tibble
-    else
-      tts[[1]] |> 
+    else {
+      bound <- tts[[1]] |>
           as_tibble(skip_GRanges = TRUE) |>
-          dplyr::bind_cols(tts[[2]], .id=.id) %>%
-          when(
-  
-              # If the column added are not sample-wise or feature-wise return tibble
-              (colnames(tts[[2]]) %in% c(
-                  get_subset_columns(., !!s_(tts[[1]])$symbol),
-                  get_subset_columns(., !!f_(tts[[1]])$symbol)
-              )
-              ) |> all() ~ update_SE_from_tibble(., tts[[1]], column_belonging = column_belonging),
-  
-              # Return tiblle
-              ~ {
-                warning("tidySummarizedExperiment says:",
-                        " The new columns do not include pure sample-wise",
-                        " or feature-wise. A data frame is returned for",
-                        " independent data analysis.")
-                (.)
-              }
-          )
+          dplyr::bind_cols(tts[[2]], .id = .id)
+      if (all(colnames(tts[[2]]) %in% c(
+          get_subset_columns(bound, !!s_(tts[[1]])$symbol),
+          get_subset_columns(bound, !!f_(tts[[1]])$symbol)
+      ))) {
+        update_SE_from_tibble(bound, tts[[1]], column_belonging = column_belonging)
+      } else {
+        warning("tidySummarizedExperiment says: The new columns do not include pure sample-wise or feature-wise. A data frame is returned for independent data analysis.")
+        bound
+      }
+    }
 
 }
 
@@ -505,7 +494,7 @@ pull.SummarizedExperiment <- function(.data, var=-1, name=NULL, ...) {
     var <- enquo(var)
     name <- enquo(name)
 
-    quo_name_name <- name %>% when(quo_is_null(.) ~ NULL, quo_name(name))
+    quo_name_name <- if (quo_is_null(name)) NULL else quo_name(name)
     
     # Deprecation of special column names
     if (is_sample_feature_deprecated_used(

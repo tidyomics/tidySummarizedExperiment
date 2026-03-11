@@ -42,7 +42,8 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
   . <- NULL 
   
   # Deprecation of special column names
-  if (is_sample_feature_deprecated_used(x, when(by, !is.null(.) ~ by, ~ colnames(y)))) {
+  by_or_cols <- if (!is.null(by)) by else colnames(y)
+  if (is_sample_feature_deprecated_used(x, by_or_cols)) {
     x <- ping_old_special_column_into_metadata(x)
   }
   
@@ -51,10 +52,11 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
   colnames_row <- get_rownames_col(x)
   
   # See if join done by sample, feature or both
-  columns_query <- by %>% when(
-    !is.null(.) ~ choose_name_if_present(.), 
-    ~ colnames(y) %>% intersect(c(colnames_col, colnames_row))
-  )
+  columns_query <- if (!is.null(by)) {
+    choose_name_if_present(by)
+  } else {
+    intersect(colnames(y), c(colnames_col, colnames_row))
+  }
   
   # Analyze join scope
   scope_report <- analyze_query_scope_join(x, columns_query)
@@ -73,21 +75,16 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
     # If I have a big dataset
     if (ncol(x) > 100) message("tidySummarizedExperiment says: if you are joining a dataframe both sample-wise and feature-wise, for efficiency (until further development), it is better to separate your joins and join datasets sample-wise OR feature-wise.")
     
-    out <- x %>%
+    joined <- x %>%
       as_tibble(skip_GRanges = TRUE) %>%
-      join_function(y, by = by, copy = copy, suffix = suffix, ...) %>%
-      when(
-        
-        # If duplicated sample-feature pair returns tibble
-        !is_not_duplicated(., x) | !is_rectangular(., x) ~ {
-          message(duplicated_cell_names)
-          message(data_frame_returned_message)
-          (.)
-        },
-        
-        # Otherwise return updated tidySummarizedExperiment
-        ~ update_SE_from_tibble(., x)
-      )
+      join_function(y, by = by, copy = copy, suffix = suffix, ...)
+    out <- if (!is_not_duplicated(joined, x) || !is_rectangular(joined, x)) {
+      message(duplicated_cell_names)
+      message(data_frame_returned_message)
+      joined
+    } else {
+      update_SE_from_tibble(joined, x)
+    }
     
     # Attach metadata if we returned an SE
     if (methods::is(out, "SummarizedExperiment")) {
