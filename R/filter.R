@@ -56,6 +56,7 @@ analyze_query_scope_filter <- function(se, ...) {
 #' # Learn more in ?dplyr_tidy_eval
 #' 
 #' @importFrom purrr map
+#' @importFrom tidyprint tidy_message
 #' @importFrom dplyr filter
 #' @references
 #' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
@@ -90,10 +91,11 @@ filter.SummarizedExperiment <- function(.data, ..., .preserve=FALSE) {
             dplyr::filter(..., .preserve=.preserve)
 
         if (!is_rectangular(new_meta, .data)) {
-            message("tidySummarizedExperiment says:",
-                " The resulting data frame is not rectangular",
-                " (all genes for all samples), a tibble is returned",
-                " for independent data analysis.")
+            tidy_message(paste0(
+                "The resulting data frame is not rectangular ",
+                "(all genes for all samples), a tibble is returned ",
+                "for independent data analysis."
+            ))
             return(new_meta)
         } else {
             .data[  

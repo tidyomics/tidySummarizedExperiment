@@ -11,6 +11,7 @@
 #' @importFrom SummarizedExperiment assays<-
 #' @importFrom S4Vectors SimpleList
 #' @importFrom ttservice bind_rows
+#' @importFrom tidyprint tidy_message
 #' @importFrom lifecycle deprecate_warn
 #' @references
 #' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
@@ -25,7 +26,7 @@ bind_rows.SummarizedExperiment <- function(..., .id=NULL, add.cell.ids=NULL) {
     tts <- flatten_if(dots_values(...), is_spliced)
 
     if (is_split_by_sample(tts) && is_split_by_transcript(tts)) {
-        stop("tidySummarizedExperiment says: bind_rows cannot be applied to splits both by sample- and feature-wise information")
+        tidy_stop("bind_rows cannot be applied to splits both by sample- and feature-wise information")
     }
     new_obj <- if (is_split_by_sample(tts)) {
         cbind(tts[[1]], tts[[2]])
@@ -38,8 +39,7 @@ bind_rows.SummarizedExperiment <- function(..., .id=NULL, add.cell.ids=NULL) {
 
     # If duplicated sample names
     if (new_obj |> colnames() |> duplicated() |> which() |> length() |> gt(0)) {
-        warning("tidySummarizedExperiment says:",
-            " you have duplicated sample names, they will be made unique.")
+        tidy_warning("you have duplicated sample names, they will be made unique.")
     }
     unique_colnames <- make.unique(colnames(new_obj), sep="_")
 
@@ -91,8 +91,7 @@ append_samples.SummarizedExperiment <- function(x, ..., .id = NULL) {
 
     # If duplicated sample names
     if (any(duplicated(colnames(new_obj)))) {
-        warning("tidySummarizedExperiment says:",
-                " you have duplicated sample names, they will be made unique.")
+        tidy_warning("you have duplicated sample names, they will be made unique.")
         unique_colnames <- make.unique(colnames(new_obj), sep = "_")
         colnames(new_obj) <- unique_colnames
 
@@ -176,7 +175,7 @@ bind_cols_internal <- function(..., .id=NULL, column_belonging=NULL) {
       ))) {
         update_SE_from_tibble(bound, tts[[1]], column_belonging = column_belonging)
       } else {
-        warning("tidySummarizedExperiment says: The new columns do not include pure sample-wise or feature-wise. A data frame is returned for independent data analysis.")
+        tidy_warning("The new columns do not include pure sample-wise or feature-wise. A data frame is returned for independent data analysis.")
         bound
       }
     }
@@ -254,7 +253,7 @@ distinct.SummarizedExperiment <- function(.data, ..., .keep_all=FALSE) {
 #' @export
 group_by.SummarizedExperiment <- function(.data, ...,
     .add=FALSE, .drop=group_by_drop_default(.data)) {
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     # Deprecation of special column names
     .cols <- enquos(..., .ignore_empty="all") %>% 
@@ -285,7 +284,7 @@ group_by.SummarizedExperiment <- function(.data, ...,
 #' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
 #' @export
 summarise.SummarizedExperiment <- function(.data, ...) {
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     # Deprecation of special column names
     .cols <- enquos(..., .ignore_empty="all") %>% 
@@ -333,7 +332,7 @@ summarize.SummarizedExperiment <- summarise.SummarizedExperiment
 #' Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
 #' @export
 rowwise.SummarizedExperiment <- function(data, ...) {
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     data |>
         as_tibble() |>
@@ -406,7 +405,7 @@ sample_n.SummarizedExperiment <- function(tbl, size, replace=FALSE,
     weight=NULL, .env=NULL, ...) {
     lifecycle::signal_superseded("1.0.0", "sample_n()", "slice_sample()")
 
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     tbl |>
         as_tibble() |>
@@ -425,7 +424,7 @@ sample_frac.SummarizedExperiment <- function(tbl, size=1, replace=FALSE,
     weight=NULL, .env=NULL, ...) {
     lifecycle::signal_superseded("1.0.0", "sample_frac()", "slice_sample()")
 
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     tbl |>
         as_tibble() |>
@@ -448,7 +447,7 @@ sample_frac.SummarizedExperiment <- function(tbl, size=1, replace=FALSE,
 #' @export
 count.SummarizedExperiment <- function(x, ..., wt=NULL,
     sort=FALSE, name=NULL, .drop=group_by_drop_default(x)) {
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     # Deprecation of special column names
     .cols <- enquos(..., .ignore_empty="all") %>% 
@@ -528,14 +527,13 @@ pull.SummarizedExperiment <- function(.data, var=-1, name=NULL, ...) {
 
         # Warning if column names of assays do not overlap
         if (check_if_assays_are_NOT_consistently_ordered(.data)) {
-            warning(
-                "tidySummarizedExperiment says:",
-                " the assays in your SummarizedExperiment have column names, ",
+            tidy_warning(paste0(
+                "the assays in your SummarizedExperiment have column names, ",
                 "but their order is not the same. Pulling assays can return ",
-                "data in a order you don't expect. To avoid unwanted behaviour",
-                " it is highly recommended to have assays with the same order",
-                " of colnames and rownames" 
-            )
+                "data in a order you don't expect. To avoid unwanted behaviour ",
+                "it is highly recommended to have assays with the same order ",
+                "of colnames and rownames."
+            ))
             
             # reorder assay colnames before printing
             # Rearrange if assays has colnames and rownames

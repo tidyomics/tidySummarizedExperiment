@@ -67,7 +67,7 @@ as_matrix <- function(tbl,
         pull(class) %>%
         unique() %>%
         `%in%`(c("numeric", "integer")) %>% not() %>% any()) {
-    warning("tidybulk says: there are NON-numerical columns, the matrix will NOT be numerical")
+    tidy_warning("there are NON-numerical columns, the matrix will NOT be numerical")
   }
   out <- tbl %>% as.data.frame()
   if (!quo_is_null(rownames)) {
@@ -193,14 +193,13 @@ get_abundance_sc_wide <- function(.data, transcripts = NULL, all = FALSE) {
     is.null(transcripts) &&
     !all
   ) {
-    stop("
-                Your object does not contain variable feature labels,
-                feature argument is empty and all arguments are set to FALSE.
-                Either:
-                1. use detect_variable_features() to select variable feature
-                2. pass an array of feature names
-                3. set all=TRUE (this will output a very large object, does your computer have enough RAM?)
-                ")
+    tidy_stop(paste0(
+      "Your object does not contain variable feature labels, ",
+      "feature argument is empty and all arguments are set to FALSE. ",
+      "Either: 1. use detect_variable_features() to select variable feature, ",
+      "2. pass an array of feature names, ",
+      "3. set all=TRUE (this will output a very large object, does your computer have enough RAM?)"
+    ))
   }
   
   # Get variable features if existing
@@ -221,7 +220,7 @@ get_abundance_sc_wide <- function(.data, transcripts = NULL, all = FALSE) {
   } else if (!is.null(transcripts)) {
     mat[transcripts, , drop = FALSE]
   } else {
-    stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
+    tidy_stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
   }
   mat %>%
     as.matrix() %>%
@@ -263,14 +262,13 @@ get_abundance_sc_long <- function(.data, transcripts = NULL, all = FALSE,
     is.null(transcripts) &&
     !all
   ) {
-    stop("
-                Your object does not contain variable feature labels,
-                feature argument is empty and all arguments are set to FALSE.
-                Either:
-                1. use detect_variable_features() to select variable feature
-                2. pass an array of feature names
-                3. set all=TRUE (this will output a very large object, does your computer have enough RAM?)
-                ")
+    tidy_stop(paste0(
+      "Your object does not contain variable feature labels, ",
+      "feature argument is empty and all arguments are set to FALSE. ",
+      "Either: 1. use detect_variable_features() to select variable feature, ",
+      "2. pass an array of feature names, ",
+      "3. set all=TRUE (this will output a very large object, does your computer have enough RAM?)"
+    ))
   }
   
   
@@ -303,7 +301,7 @@ get_abundance_sc_long <- function(.data, transcripts = NULL, all = FALSE,
         } else if (all) {
           .x
         } else {
-          stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
+          tidy_stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
         }
         if (exclude_zeros) {
           .x_sub[.x_sub == 0] <- NA
@@ -460,7 +458,7 @@ slice_optimised <- function(.data, ..., .by = NULL, .preserve = FALSE) {
   slice_args <- list(...)
   if (is_range_slice_ungrouped_detected(.data, slice_args, .by)) {
     # For range slices on ungrouped data, throw an error with a helpful message
-    stop("tidySummarizedExperiment says: slice using a range doesn't work on ungrouped data. Please use .by parameter or convert to tibble with as_tibble() before using slice with ranges.")
+    tidy_stop("slice using a range doesn't work on ungrouped data. Please use .by parameter or convert to tibble with as_tibble() before using slice with ranges.")
   }
   
   
@@ -581,10 +579,10 @@ check_se_dimnames <- function(se) {
         )
         if (any(cn)) {
             idx <- which(cn)[1]
-            warning(
-                "tidySummarizedExperiment says: the assays in your SummarizedExperiment have column names, but the SummarizedExperiment does not. Setting colnames(se) to column names of first assay with column names (assay ",
-                idx, ")."
-            )
+            tidy_warning(paste0(
+                "the assays in your SummarizedExperiment have column names, but the SummarizedExperiment does not. ",
+                "Setting colnames(se) to column names of first assay with column names (assay ", idx, ")."
+            ))
             colnames(se) <- colnames(assays(se, withDimnames = FALSE)[[idx]])
         }
     }
@@ -596,22 +594,22 @@ check_se_dimnames <- function(se) {
         )
         if (any(rn)) {
             idx <- which(rn)[1]
-            warning(
-                "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but the SummarizedExperiment does not. Setting rownames(se) to row names of first assay with row names (assay ",
-                idx, ")."
-            )
+            tidy_warning(paste0(
+                "the assays in your SummarizedExperiment have row names, but the SummarizedExperiment does not. ",
+                "Setting rownames(se) to row names of first assay with row names (assay ", idx, ")."
+            ))
             rownames(se) <- rownames(assays(se, withDimnames = FALSE)[[idx]])
         }
     }
 
     # Repair duplicated dimnames (common after base::cbind()/rbind()).
     if (!is.null(colnames(se)) && any(duplicated(colnames(se)))) {
-        warning("tidySummarizedExperiment says: some column names are duplicated; making them unique.")
+        tidy_warning("some column names are duplicated; making them unique.")
         unique_colnames <- make.unique(colnames(se), sep = "_")
         colnames(se) <- unique_colnames
     }
     if (!is.null(rownames(se)) && any(duplicated(rownames(se)))) {
-        warning("tidySummarizedExperiment says: some row names are duplicated; making them unique.")
+        tidy_warning("some row names are duplicated; making them unique.")
         unique_rownames <- make.unique(rownames(se), sep = "_")
         rownames(se) <- unique_rownames
     }
@@ -619,14 +617,14 @@ check_se_dimnames <- function(se) {
     # Warn if column names of assays do not overlap, or if some assays have
     # column names and others don't
     if (check_if_assays_are_NOT_overlapped(se, dim = "cols")) {
-        warning(
-            "tidySummarizedExperiment says: at least one of the assays in your SummarizedExperiment have column names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
+        tidy_warning(
+            "at least one of the assays in your SummarizedExperiment have column names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
         )
     }
     # Same for row names
     if (check_if_assays_are_NOT_overlapped(se, dim = "rows")) {
-        warning(
-            "tidySummarizedExperiment says: at least one of the assays in your SummarizedExperiment have row names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
+        tidy_warning(
+            "at least one of the assays in your SummarizedExperiment have row names, but they don't completely overlap between assays. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
         )
     }
 
@@ -636,16 +634,16 @@ check_se_dimnames <- function(se) {
         length(assays(se)) > 0 &&
         !is.null(colnames(assays(se, withDimnames = FALSE)[[1]])) &&
         !all(colnames(assays(se, withDimnames = FALSE)[[1]]) %in% colnames(se))) {
-        warning(
-            "tidySummarizedExperiment says: the assays in your SummarizedExperiment have column names, but they don't agree with the column names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
+        tidy_warning(
+            "the assays in your SummarizedExperiment have column names, but they don't agree with the column names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of samples."
         )
     }
     if (!is.null(rownames(se)) &&
         length(assays(se)) > 0 &&
         !is.null(rownames(assays(se, withDimnames = FALSE)[[1]])) &&
         !all(rownames(assays(se, withDimnames = FALSE)[[1]]) %in% rownames(se))) {
-        warning(
-            "tidySummarizedExperiment says: the assays in your SummarizedExperiment have row names, but they don't agree with the row names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
+        tidy_warning(
+            "the assays in your SummarizedExperiment have row names, but they don't agree with the row names of the SummarizedExperiment object itself. It is strongly recommended to make the assays consistent, to avoid erroneous matching of features."
         )
     }
 
@@ -1043,7 +1041,7 @@ is_sample_feature_deprecated_used <- function(.data, user_columns, use_old_speci
   old_standard_is_used <- old_standard_is_used_for_sample | old_standard_is_used_for_feature
   
   if (old_standard_is_used) {
-    warning("tidySummarizedExperiment says: from version 1.3.1, the special columns including sample/feature id (colnames(se), rownames(se)) has changed to \".sample\" and \".feature\". This dataset is returned with the old-style vocabulary (feature and sample), however we suggest to update your workflow to reflect the new vocabulary (.feature, .sample)")
+    tidy_warning("from version 1.3.1, the special columns including sample/feature id (colnames(se), rownames(se)) has changed to \".sample\" and \".feature\". This dataset is returned with the old-style vocabulary (feature and sample), however we suggest to update your workflow to reflect the new vocabulary (.feature, .sample)")
     
     use_old_special_names <- TRUE
   }
@@ -1051,8 +1049,28 @@ is_sample_feature_deprecated_used <- function(.data, user_columns, use_old_speci
   use_old_special_names
 }
 
-data_frame_returned_message <- "tidySummarizedExperiment says: A data frame is returned for independent data analysis."
-duplicated_cell_names <- "tidySummarizedExperiment says: This operation lead to duplicated feature names. A data frame is returned for independent data analysis."
+data_frame_returned_message <- "A data frame is returned for independent data analysis."
+duplicated_cell_names <- "This operation lead to duplicated feature names. A data frame is returned for independent data analysis."
+
+#' Format message with package prefix (tidyprint-style)
+#' @keywords internal
+tidy_format_message <- function(message) {
+  calling_package <- utils::packageName(parent.frame(n = 2))
+  prefix <- if (is.null(calling_package)) "Console" else calling_package
+  paste0(prefix, " says: ", message)
+}
+
+#' Emit a warning with tidyprint-style package prefix
+#' @keywords internal
+tidy_warning <- function(message) {
+  warning(tidy_format_message(message), call. = FALSE)
+}
+
+#' Emit an error with tidyprint-style package prefix
+#' @keywords internal
+tidy_stop <- function(message) {
+  stop(tidy_format_message(message), call. = FALSE)
+}
 
 # Key column names
 #' @importFrom S4Vectors metadata
@@ -1189,7 +1207,7 @@ s_ <- function(x) {
 
 split_SummarizedExperiment_by_feature_to_list <- function(.data) {
   if (nrow(.data) > 1000)
-    message("tidySummarizedExperiment says: grouping a SummarizedExperiment by feature takes 1 minute for ~ 10,000 features.")
+    tidyprint::tidy_message("Grouping a SummarizedExperiment by feature takes 1 minute for ~ 10,000 features.", type = "warning")
   map(1:nrow(.data), ~ .data[.x,])
 }
 
