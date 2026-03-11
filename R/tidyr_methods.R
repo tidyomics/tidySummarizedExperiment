@@ -300,16 +300,15 @@ nest.SummarizedExperiment <- function(.data, ..., .names_sep=NULL) {
         tidyr::nest(...) |> 
 
           mutate(
-            !!as.symbol(col_name_data) := pmap(
-
-              # Add sample feature to map if nesting by those
-                list(!!as.symbol(col_name_data)) %>%
-
-                  # Check if nested by sample
-                  when(sample_name %in% colnames(my_test_nest) ~ c(., list(!!sample_symbol)), ~ (.)) %>%
-
-                  # Check if nested by feature
-                  when(feature_name %in% colnames(my_test_nest) ~ c(., list(!!feature_symbol)), ~ (.)) , ~ { 
+            !!as.symbol(col_name_data) := {
+              nest_cols <- list(!!as.symbol(col_name_data))
+              if (sample_name %in% colnames(my_test_nest)) {
+                nest_cols <- c(nest_cols, list(!!sample_symbol))
+              }
+              if (feature_name %in% colnames(my_test_nest)) {
+                nest_cols <- c(nest_cols, list(!!feature_symbol))
+              }
+              pmap(nest_cols, ~ { 
                     
                     # VERY COMPLICATE WAY TO DO THIS. SIMPLIFY IN THE FUTURE
                     
@@ -339,8 +338,8 @@ nest.SummarizedExperiment <- function(.data, ..., .names_sep=NULL) {
                           setdiff(c(sample_name, feature_name))
                       )) 
                  
-                }
-            )
+                })
+            }
         ) %>%
         # Coerce to tidySummarizedExperiment_nested for unnesting
         add_class("tidySummarizedExperiment_nested")
