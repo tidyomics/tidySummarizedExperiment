@@ -59,35 +59,23 @@ as_matrix <- function(tbl,
                       do_check = TRUE) {
   rownames <- enquo(rownames)
   
-  tbl %>%
-    # Throw warning if data frame is not numerical beside the rownames column (if present)
-    when(
-      do_check &&
-        (.) %>%
-        # If rownames defined eliminate it from the data frame
-        when(!quo_is_null(rownames) ~ (.)[,-1], ~ (.)) %>%
+  tbl_check <- if (!quo_is_null(rownames)) tbl[, -1, drop = FALSE] else tbl
+  if (do_check &&
+      tbl_check %>%
         dplyr::summarise_all(class) %>%
         tidyr::gather(variable, class) %>%
         pull(class) %>%
         unique() %>%
-        `%in%`(c("numeric", "integer")) %>% not() %>% any() ~ {
-          warning("tidybulk says: there are NON-numerical columns, the matrix will NOT be numerical")
-          (.)
-        },
-      ~ (.)
-    ) %>%
-    as.data.frame() %>%
-    
-    # Deal with rownames column if present
-    when(
-      !quo_is_null(rownames) ~ (.) %>%
-        magrittr::set_rownames(tbl %>% pull(!!rownames)) %>%
-        select(-1),
-      ~ (.)
-    ) %>%
-    
-    # Convert to matrix
-    as.matrix()
+        `%in%`(c("numeric", "integer")) %>% not() %>% any()) {
+    warning("tidybulk says: there are NON-numerical columns, the matrix will NOT be numerical")
+  }
+  out <- tbl %>% as.data.frame()
+  if (!quo_is_null(rownames)) {
+    out <- out %>%
+      magrittr::set_rownames(tbl %>% pull(!!rownames)) %>%
+      select(-1)
+  }
+  out %>% as.matrix()
 }
 
 #' @importFrom tibble as_tibble
@@ -227,15 +215,15 @@ get_abundance_sc_wide <- function(.data, transcripts = NULL, all = FALSE) {
   }
   
   # Just grub last assay
-  assays(.data) %>%
-    as.list() %>%
-    tail(1) %>%
-    .[[1]] %>%
-    when(
-      variable_genes %>% is.null() %>% `!`() ~ (.)[variable_genes, , drop = FALSE],
-      transcripts %>% is.null() %>% `!`() ~ (.)[transcripts, , drop = FALSE],
-      ~ stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
-    ) %>%
+  mat <- assays(.data) %>% as.list() %>% tail(1) %>% .[[1]]
+  mat <- if (!is.null(variable_genes)) {
+    mat[variable_genes, , drop = FALSE]
+  } else if (!is.null(transcripts)) {
+    mat[transcripts, , drop = FALSE]
+  } else {
+    stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
+  }
+  mat %>%
     as.matrix() %>%
     t() %>%
     as_tibble(rownames = "cell")
@@ -307,31 +295,30 @@ get_abundance_sc_long <- function(.data, transcripts = NULL, all = FALSE,
     map2(
       assay_names,
       
-      ~ .x %>%
-        when(
-          variable_genes %>% is.null() %>% `!`() ~ .x[variable_genes, , drop = FALSE],
-          transcripts %>% is.null() %>% `!`() ~ .x[toupper(rownames(.x)) %in% toupper(transcripts), , drop=FALSE],
-          all ~ .x,
-          ~ stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
-        ) %>%
-        
-        # Replace 0 with NA
-        when(exclude_zeros ~ (.) %>% {
-          x <- (.)
-          x[x == 0] <- NA
-          x
-        }, ~ (.)) %>%
-        as.matrix() %>%
-        data.frame() %>%
-        as_tibble(rownames=f_(.data)$name) %>%
+      ~ {
+        .x_sub <- if (!is.null(variable_genes)) {
+          .x[variable_genes, , drop = FALSE]
+        } else if (!is.null(transcripts)) {
+          .x[toupper(rownames(.x)) %in% toupper(transcripts), , drop = FALSE]
+        } else if (all) {
+          .x
+        } else {
+          stop("It is not convenient to extract all genes, you should have either variable features or feature list to extract")
+        }
+        if (exclude_zeros) {
+          .x_sub[.x_sub == 0] <- NA
+        }
+        .x_sub %>%
+          as.matrix() %>%
+          data.frame() %>%
+          as_tibble(rownames = f_(.data)$name) %>%
         tidyr::pivot_longer(
           cols = -!!f_(.data)$symbol,
           names_to = "cell",
           values_to = "abundance" %>% paste(.y, sep = "_"),
           values_drop_na = TRUE
         )
-      # %>%
-      # mutate_if(is.character, as.factor) %>%
+      }
     ) %>%
     Reduce(function(...) left_join(..., by = c(f_(.data)$name, "cell")), .)
 }
@@ -363,26 +350,16 @@ update_SE_from_tibble <- function(.data_mutated, se, column_belonging = NULL) {
   
   # This to avoid the mismatch between missing column names for counts 
   # and numerical row names for colData
-  row_names_col = 
-    col_data %>%
-    rownames() %>%
-    when(
-      colnames(se) %>% is.null ~ as.integer(.),
-      ~ (.)
-    )
+  rn_col <- rownames(col_data)
+  row_names_col <- if (is.null(colnames(se))) as.integer(rn_col) else rn_col
   
   # Extract row data
   row_data <- extract_row_data(.data_mutated, se, col_data = col_data)
   
   # This to avoid the mismatch between missing row names for counts 
   # and numerical row names for rowData
-  row_names_row <- 
-    row_data %>%
-    rownames() %>%
-    when(
-      rownames(se) %>% is.null ~ as.integer(.),
-      ~ (.)
-    )
+  rn_row <- rownames(row_data)
+  row_names_row <- if (is.null(rownames(se))) as.integer(rn_row) else rn_row
   
   # Subset if needed. This function is used by many dplyr utilities
   se <- se[row_names_row, row_names_col]
@@ -570,47 +547,26 @@ get_special_columns <- function(.data) {
 #' @noRd
 get_special_datasets <- function(se) {
   
-  rr =  se %>%
-    rowRanges() 
+  rr <- se %>% rowRanges()
   
-  rr %>%
-    when( 
-      
-      # If no ranges
-      as.data.frame(.) %>%
-        nrow() %>%
-        equals(0) ~ tibble(),
-      
-      # If it is a range list (multiple rows per feature)
-      is(., "CompressedGRangesList") ~ {
-        
-        # If GRanges does not have row names
-        if (is.null(rr@partitioning@NAMES)) {
-          rr@partitioning@NAMES <- as.character(1:nrow(se))
-        }
-        
-        tibble::as_tibble(rr) %>%
-          eliminate_GRanges_metadata_columns_also_present_in_Rowdata(se) %>%
-          nest(GRangesList = -group_name) %>%
-          rename(!!f_(se)$symbol := group_name)
-        
-      },
-      
-      # If standard GRanges (one feature per line)
-      ~ {
-        
-        # If GRanges does not have row names
-        if (is.null(rr@ranges@NAMES)) {
-          rr@ranges@NAMES <- as.character(1:nrow(se))
-        }
-        
-        tibble::as_tibble(rr) %>% 
-          eliminate_GRanges_metadata_columns_also_present_in_Rowdata(se) %>% 
-          mutate(!!f_(se)$symbol := rr@ranges@NAMES) 
-      }
-      
-    ) %>%
-    list()
+  if (nrow(as.data.frame(rr)) == 0) {
+    list(tibble())
+  } else if (is(rr, "CompressedGRangesList")) {
+    if (is.null(rr@partitioning@NAMES)) {
+      rr@partitioning@NAMES <- as.character(1:nrow(se))
+    }
+    list(tibble::as_tibble(rr) %>%
+      eliminate_GRanges_metadata_columns_also_present_in_Rowdata(se) %>%
+      nest(GRangesList = -group_name) %>%
+      rename(!!f_(se)$symbol := group_name))
+  } else {
+    if (is.null(rr@ranges@NAMES)) {
+      rr@ranges@NAMES <- as.character(1:nrow(se))
+    }
+    list(tibble::as_tibble(rr) %>%
+      eliminate_GRanges_metadata_columns_also_present_in_Rowdata(se) %>%
+      mutate(!!f_(se)$symbol := rr@ranges@NAMES))
+  }
 }
 
 check_se_dimnames <- function(se) {
@@ -776,13 +732,13 @@ get_count_datasets <- function(se) {
         # In case I have a sparse matrix
         as.matrix() |> 
         tibble::as_tibble(rownames = f_(se)$name, .name_repair = "minimal") %>%
-        
-        # If the matrix does not have sample names, fix column names
-        when(colnames(.x) %>% is.null() & is.null(colnames(se)) ~ setNames(., c(
-          f_(se)$name,  seq_len(ncol(.x)) 
-        )),
-        ~ (.)
-        ) 
+        {
+          if (is.null(colnames(.x)) && is.null(colnames(se))) {
+            setNames(., c(f_(se)$name, seq_len(ncol(.x))))
+          } else {
+            .
+          }
+        } 
       
       # Avoid dug if SE if completely empty, no rows, no columns
       if(.x |> select(-!!f_(se)$symbol) |> ncol() == 0) return(.x)
@@ -796,11 +752,16 @@ get_count_datasets <- function(se) {
     
     # Add dummy sample or feature if we have empty assay. 
     # This is needed for a correct visualisation of the tibble form
-    map(~when(
-      f_(se)$name %in% colnames(.x) %>% not ~ mutate(.x, !!f_(se)$symbol := as.character(NA)),
-      s_(se)$name %in% colnames(.x) %>% not ~ mutate(.x, !!s_(se)$symbol := as.character(NA)),
-      ~ .x
-    )) 
+    map(~ {
+      out <- .x
+      if (!f_(se)$name %in% colnames(.x)) {
+        out <- mutate(out, !!f_(se)$symbol := as.character(NA))
+      }
+      if (!s_(se)$name %in% colnames(.x)) {
+        out <- mutate(out, !!s_(se)$symbol := as.character(NA))
+      }
+      out
+    }) 
   
   # If assays is non empty 
   if(list_assays |> length() > 0)
@@ -889,15 +850,14 @@ get_subset_columns <- function(.data, .col) {
     select(-!!.col) %>%
     colnames() %>%
     map(
-      ~
-        .x %>%
-        when(
-          .data %>%
+      ~ if (.data %>%
             distinct_at(vars(!!.col, .x)) %>%
             nrow() %>%
-            equals(n_x) ~ (.),
-          ~NULL
-        )
+            equals(n_x)) {
+        .x
+      } else {
+        NULL
+      }
     ) %>%
     
     # Drop NULL
@@ -948,50 +908,41 @@ subset_tibble_output <- function(.data, count_info, sample_info, gene_info, rang
   .subset <- enquo(.subset)
   
   # Build template of the output
-  output_colnames <- 
-    slice(count_info, 0) %>%
+  template <- slice(count_info, 0) %>%
     left_join(slice(sample_info, 0), by = s_(.data)$name) %>%
-    left_join(slice(gene_info, 0), by = f_(.data)$name) %>%
-    when(nrow(range_info) > 0 ~ (.) %>% left_join(range_info, by = f_(.data)$name), ~ (.)) %>%
-    select(!!.subset) %>%
-    colnames()
-  
+    left_join(slice(gene_info, 0), by = f_(.data)$name)
+  if (nrow(range_info) > 0) {
+    template <- template %>% left_join(range_info, by = f_(.data)$name)
+  }
+  output_colnames <- template %>% select(!!.subset) %>% colnames()
   
   # Sample table
-  sample_info <- 
-    sample_info %>%
-    when(
-      colnames(.) %>% intersect(output_colnames) %>% length() %>% equals(0) ~ NULL,
-      select(., one_of(s_(.data)$name, output_colnames)) %>%
-        suppressWarnings()
-    )
+  sample_info <- if (length(intersect(colnames(sample_info), output_colnames)) == 0) {
+    NULL
+  } else {
+    sample_info %>% select(one_of(s_(.data)$name, output_colnames)) %>% suppressWarnings()
+  }
   
   # Ranges table
-  range_info <- 
-    range_info %>%
-    when(
-      colnames(.) %>% intersect(output_colnames) %>% length() %>% equals(0) ~ NULL,
-      select(., one_of(f_(.data)$name, output_colnames)) %>%
-        suppressWarnings()
-    )
+  range_info <- if (length(intersect(colnames(range_info), output_colnames)) == 0) {
+    NULL
+  } else {
+    range_info %>% select(one_of(f_(.data)$name, output_colnames)) %>% suppressWarnings()
+  }
   
-  # Ranges table
-  gene_info <- 
-    gene_info %>%
-    when(
-      colnames(.) %>% intersect(output_colnames) %>% length() %>% equals(0) ~ NULL,
-      select(., one_of(f_(.data)$name, output_colnames)) %>%
-        suppressWarnings()
-    )
+  # Gene info
+  gene_info <- if (length(intersect(colnames(gene_info), output_colnames)) == 0) {
+    NULL
+  } else {
+    gene_info %>% select(one_of(f_(.data)$name, output_colnames)) %>% suppressWarnings()
+  }
   
-  # Ranges table
-  count_info <- 
-    count_info %>%
-    when(
-      colnames(.) %>% intersect(output_colnames) %>% length() %>% equals(0) ~ NULL,
-      select(., one_of(f_(.data)$name, s_(.data)$name, output_colnames)) %>%
-        suppressWarnings()
-    )
+  # Count info
+  count_info <- if (length(intersect(colnames(count_info), output_colnames)) == 0) {
+    NULL
+  } else {
+    count_info %>% select(one_of(f_(.data)$name, s_(.data)$name, output_colnames)) %>% suppressWarnings()
+  }
   
   if (
     !is.null(count_info) & 
@@ -1003,18 +954,15 @@ subset_tibble_output <- function(.data, count_info, sample_info, gene_info, rang
        length() %>% gt(0))
     )
   ) {
-    output_df <- 
-      count_info %>%
-      when(!is.null(sample_info) ~ (.) %>% left_join(sample_info, by=s_(.data)$name), ~ (.)) %>%
-      when(!is.null(gene_info) ~ (.) %>% left_join(gene_info, by=f_(.data)$name), ~ (.)) %>%
-      when(!is.null(range_info) ~ (.) %>% left_join(range_info, by=f_(.data)$name), ~ (.))
-  } else if (!is.null(sample_info) ) {
+    output_df <- count_info
+    if (!is.null(sample_info)) output_df <- output_df %>% left_join(sample_info, by = s_(.data)$name)
+    if (!is.null(gene_info)) output_df <- output_df %>% left_join(gene_info, by = f_(.data)$name)
+    if (!is.null(range_info)) output_df <- output_df %>% left_join(range_info, by = f_(.data)$name)
+  } else if (!is.null(sample_info)) {
     output_df <- sample_info
   } else if (!is.null(gene_info)) {
-    output_df <- gene_info %>%
-      
-      # If present join GRanges
-      when(!is.null(range_info) ~ (.) %>% left_join(range_info, by=f_(.data)$name), ~ (.))
+    output_df <- gene_info
+    if (!is.null(range_info)) output_df <- output_df %>% left_join(range_info, by = f_(.data)$name)
   }
   
   output_df %>%
@@ -1062,12 +1010,12 @@ get_colnames_col <- function(x) {
 }
 
 get_rownames_col <- function(x) {
-  x %>%
-    when(
-      .hasSlot(., "rowData") | .hasSlot(., "elementMetadata") ~ colnames(rowData(.)), 
-      TRUE ~ c()
-    ) %>% 
-    c(f_(x)$name) 
+  rn <- if (.hasSlot(x, "rowData") || .hasSlot(x, "elementMetadata")) {
+    colnames(rowData(x))
+  } else {
+    character(0)
+  }
+  c(rn, f_(x)$name)
 }
 
 # This function is used for the change of special sample column to .sample

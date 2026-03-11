@@ -40,16 +40,12 @@ extract_col_data <- function(.data_mutated, se, column_belonging = NULL,
   
   # Get colnames_row if not provided
   if (is.null(colnames_row)) {
-    colnames_row <- se %>%
-      when(
-        .hasSlot(., "rowData") | .hasSlot(., "elementMetadata") ~ colnames(rowData(.)), 
-        TRUE ~ c()
-      ) %>% 
-      c(f_(se)$name) %>%
-      
-      # Forcefully add the column I know the source. This is useful in nesting 
-      # where a unique value cannot be linked to sample or feature
-      c(names(column_belonging[column_belonging == f_(se)$name]))
+    if (.hasSlot(se, "rowData") || .hasSlot(se, "elementMetadata")) {
+      colnames_row <- colnames(rowData(se))
+    } else {
+      colnames_row <- character(0)
+    }
+    colnames_row <- c(colnames_row, f_(se)$name, names(column_belonging[column_belonging == f_(se)$name]))
   }
   
   # This is used if I have one column with one value that can be mapped to rows and columns
