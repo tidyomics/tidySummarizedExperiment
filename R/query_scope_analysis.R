@@ -402,8 +402,8 @@ modify_features <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
-  # Use pivot_transcript for rowData tibble with .feature already present
-  modified_rowdata <- pivot_transcript(.data, join_GRanges = FALSE) |>
+  # Use subset_feature_data for rowData tibble with .feature already present
+  modified_rowdata <- subset_feature_data(.data, join_GRanges = FALSE) |>
     dplyr_fn(...) |>
     DataFrame_rownames(rownames_col = f_(.data)$name)
   
@@ -413,7 +413,7 @@ modify_features <- function(.data, operation, ...) {
     # We need to subset the entire SE object accordingly
     
     # Get the row indices that remain after the operation (with .feature for user refs)
-    original_rowdata <- pivot_transcript(.data, join_GRanges = FALSE)
+    original_rowdata <- subset_feature_data(.data, join_GRanges = FALSE)
     original_rowdata$.original_index <- seq_len(nrow(original_rowdata))
     
     filtered_with_index <- original_rowdata |>
@@ -476,8 +476,8 @@ modify_samples <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
-  # Use pivot_sample for colData tibble with .sample already present
-  modified_coldata <- pivot_sample(.data) |>
+  # Use subset_sample_data for colData tibble with .sample already present
+  modified_coldata <- subset_sample_data(.data) |>
     dplyr_fn(...) |>
     DataFrame_rownames(rownames_col = s_(.data)$name)
   
@@ -487,7 +487,7 @@ modify_samples <- function(.data, operation, ...) {
     # We need to subset the entire SE object accordingly
     
     # Get the row indices that remain after the operation (with .sample for user refs)
-    original_coldata <- pivot_sample(.data)
+    original_coldata <- subset_sample_data(.data)
     original_coldata$.original_index <- seq_len(nrow(original_coldata))
     
     filtered_with_index <- original_coldata |>

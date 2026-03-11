@@ -1,20 +1,20 @@
-#' Extract transcript-wise information
+#' Extract feature-wise (transcript-wise) information
 #'
 #' `r lifecycle::badge("maturing")`
 #'
-#' @description pivot_transcript() takes as input a `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment)) and returns a `tbl` with only transcript-related columns
+#' @description subset_feature_data() takes as input a `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment)) and returns a `tbl` with only feature-related columns
 #'
 #'
 #'
-#' @name pivot_transcript
+#' @name subset_feature_data
 #'
 #' @param .data A `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment))
 #'
 #' @param join_GRanges If `TRUE` (default), join range info from `rowRanges` for `RangedSummarizedExperiment`. If `FALSE`, return only rowData with `.feature` as the key column.
 #'
-#' @details This functon extracts only transcript-related information for downstream analysis (e.g., visualisation). It is disruptive in the sense that it cannot be passed anymore to tidybulk function.
+#' @details This function extracts only feature-related information for downstream analysis (e.g., visualisation). It is disruptive in the sense that it cannot be passed anymore to tidybulk function.
 #'
-#' @return A `tbl` with transcript-related information
+#' @return A `tbl` with feature-related information
 #'
 #'
 #'
@@ -32,35 +32,35 @@
 #' data(airway)
 #' airway <- airway[1:100, 1:5]
 #' 
-#' 	pivot_transcript(airway 	)
+#' 	subset_feature_data(airway)
 #'
 #' @references
 #' Mangiola, S., Molania, R., Dong, R., Doyle, M. A., & Papenfuss, A. T. (2021). tidybulk: an R tidy framework for modular transcriptomic data analysis. Genome Biology, 22(1), 42. doi:10.1186/s13059-020-02233-7
 #'
 #' @docType methods
-#' @rdname pivot_transcript-methods
+#' @rdname subset_feature_data-methods
 #' @export
 #'
 #'
-setGeneric("pivot_transcript", function(.data, join_GRanges = TRUE)
-  standardGeneric("pivot_transcript"))
+setGeneric("subset_feature_data", function(.data, join_GRanges = TRUE)
+  standardGeneric("subset_feature_data"))
 
 #' Extract sample-wise information
 #'
 #' `r lifecycle::badge("maturing")`
 #'
-#' @description pivot_sample() takes as input a `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment)) and returns a `tbl` with only sample-related columns
+#' @description subset_sample_data() takes as input a `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment)) and returns a `tbl` with only sample-related columns
 #'
 #'
 #'
-#' @name pivot_sample
+#' @name subset_sample_data
 #'
 #' @param .data A `tbl` (with at least three columns for sample, feature and transcript abundance) or `SummarizedExperiment` (more convenient if abstracted to tibble with library(tidySummarizedExperiment))
 #'
 #'
-#' @details This functon extracts only sample-related information for downstream analysis (e.g., visualisation). It is disruptive in the sense that it cannot be passed anymore to tidybulk function.
+#' @details This function extracts only sample-related information for downstream analysis (e.g., visualisation). It is disruptive in the sense that it cannot be passed anymore to tidybulk function.
 #'
-#' @return A `tbl` with transcript-related information
+#' @return A `tbl` with sample-related information
 #'
 #'
 #'
@@ -78,69 +78,63 @@ setGeneric("pivot_transcript", function(.data, join_GRanges = TRUE)
 #' data(airway)
 #' airway <- airway[1:100, 1:5]
 #' 
-#' 	pivot_sample(airway )
+#' 	subset_sample_data(airway)
 #'
 #'
 #' @docType methods
-#' @rdname pivot_sample-methods
+#' @rdname subset_sample_data-methods
 #' @export
 #'
 #'
-setGeneric("pivot_sample", function(.data
-)
-  standardGeneric("pivot_sample"))
+setGeneric("subset_sample_data", function(.data)
+  standardGeneric("subset_sample_data"))
 
 
 
 # Set internal
-.pivot_sample = 		function(.data)	{
-  
+.subset_sample_data = function(.data) {
+
   colData(.data) |>
-    
     # If reserved column names are present add .x
     setNames(
       colnames(colData(.data)) |>
         str_replace("^sample$", "sample.x")
     ) |>
-    
     # Convert to tibble
-    tibble::as_tibble(rownames=sample__$name)
-  
-  
-  
-  
+    tibble::as_tibble(rownames = sample__$name)
 }
 
-#' pivot_sample
+#' subset_sample_data
 #'
 #' @docType methods
-#' @rdname pivot_sample-methods
+#' @rdname subset_sample_data-methods
+#' @export
 #'
 #' @return A consistent object (to the input)
-setMethod("pivot_sample",
+setMethod("subset_sample_data",
           "SummarizedExperiment",
-          .pivot_sample)
+          .subset_sample_data)
 
-#' pivot_sample
+#' subset_sample_data
 #'
 #' @docType methods
-#' @rdname pivot_sample-methods
+#' @rdname subset_sample_data-methods
+#' @export
 #'
 #' @importFrom stringr str_replace
 #' @importFrom rlang enquo quo_name
 #' @importFrom dplyr select left_join
 #' @importFrom SummarizedExperiment colData rowData
 #'
-#'
 #' @return A consistent object (to the input)
-setMethod("pivot_sample",
+setMethod("subset_sample_data",
           "RangedSummarizedExperiment",
-          .pivot_sample)
+          .subset_sample_data)
 
 
 
 # Set internal
-.pivot_transcript = function(.data, join_GRanges = TRUE) {
+.subset_feature_data = function(.data, join_GRanges = TRUE) {
 
   # Fix NOTEs
   . = NULL
@@ -170,23 +164,25 @@ setMethod("pivot_sample",
   }
 }
 
-#' pivot_transcript
+#' subset_feature_data
 #'
 #' @docType methods
-#' @rdname pivot_transcript-methods
+#' @rdname subset_feature_data-methods
+#' @export
 #'
 #' @return A consistent object (to the input)
-setMethod("pivot_transcript",
+setMethod("subset_feature_data",
           "SummarizedExperiment",
-          .pivot_transcript)
+          .subset_feature_data)
 
-#' pivot_transcript
+#' subset_feature_data
 #'
 #' @docType methods
-#' @rdname pivot_transcript-methods
+#' @rdname subset_feature_data-methods
+#' @export
 #'
 #' @return A consistent object (to the input)
-setMethod("pivot_transcript",
+setMethod("subset_feature_data",
           "RangedSummarizedExperiment",
-          .pivot_transcript)
+          .subset_feature_data)
 
