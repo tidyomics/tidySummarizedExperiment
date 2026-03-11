@@ -44,14 +44,13 @@ rename.SummarizedExperiment <- function(.data, ...) {
     
     if (any(old_names %in% special_columns)) {
         columns <- intersect(old_names, special_columns) |> paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only: ",
+        tidy_stop(paste0(
+            "you are trying to rename a column that is view only: ",
             columns,
-            " (it is not present in the colData or rowData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
+            " (it is not present in the colData or rowData). ",
+            "If you want to mutate a view-only column, ",
+            "make a copy and mutate that one."
+        ))
     }
     
     # Dispatch to appropriate domain-specific function
@@ -63,9 +62,10 @@ rename.SummarizedExperiment <- function(.data, ...) {
         return(modify_features(.data, "rename", ...))
     } else {
         # No matching columns found
-        stop("tidySummarizedExperiment says:",
-            " the columns you are trying to rename (",
+        tidy_stop(paste0(
+            "the columns you are trying to rename (",
             paste(old_names, collapse=", "),
-            ") are not found in colData or rowData.")
+            ") are not found in colData or rowData."
+        ))
     }
 }

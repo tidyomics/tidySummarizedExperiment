@@ -216,14 +216,13 @@ mutate_via_tibble <- function(.data, ...) {
         columns <-
             special_columns |>
                 paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
+        tidy_stop(paste0(
+            "you are trying to rename a column that is view only ",
             columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
+            " (it is not present in the colData). ",
+            "If you want to mutate a view-only column, ",
+            "make a copy and mutate that one."
+        ))
     }
     
     # If Ranges column not in query perform fast as_tibble

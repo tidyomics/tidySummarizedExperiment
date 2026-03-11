@@ -81,10 +81,11 @@ unnest_summarized_experiment <- function(data, cols, ...,
     # If both nested by transcript and sample
     if (s_(se)$name %in% colnames(data) &
         f_(se)$name %in% colnames(data) ) {
-        stop("tidySummarizedExperiment says:",
-            " for the moment nesting both by sample- and feature-wise",
-            " information is not possible. Please ask this feature",
-            " to github/stemangiola/tidySummarizedExperiment")
+        tidy_stop(paste0(
+            "for the moment nesting both by sample- and feature-wise ",
+            "information is not possible. Please ask this feature ",
+            "to github/stemangiola/tidySummarizedExperiment")
+        )
     }
   
     # If both nested not by transcript nor sample
@@ -119,9 +120,7 @@ unnest_summarized_experiment <- function(data, cols, ...,
     
         # Drop if SE is null
         if (data |> filter(map_lgl(!!cols, is.null)) |> nrow() > 0) {
-            warning("tidySummarizedcExperiment says:",
-                " some SummarizedExperiment objects to",
-                " unnest were <NULL>, and were elminated")
+            tidy_warning("some SummarizedExperiment objects to unnest were <NULL>, and were eliminated")
             data <- data |> filter(!map_lgl(!!cols, is.null))
         }
     
@@ -173,12 +172,11 @@ unnest_summarized_experiment <- function(data, cols, ...,
         }
         # If neither there is something wrong
         else {
-            stop("tidySummarizedcExperiment says: not the sample names",
-                " nor the feature names overlap through your nesting.",
-                " The nesting (due to the underlying",
-                " SummarizedExperiment::cbind and",
-                " SummarizedExperiment::rbind requirements)",
-                " needs to be rectangular.)")
+            tidy_stop(paste0(
+                "not the sample names nor the feature names overlap through your nesting. ",
+                "The nesting (due to the underlying SummarizedExperiment::cbind and ",
+                "SummarizedExperiment::rbind requirements) needs to be rectangular."
+            ))
         }
 
     }
@@ -236,7 +234,7 @@ nest.SummarizedExperiment <- function(.data, ..., .names_sep=NULL) {
     # we have to add them, otherwise the nesting and a nesting will get confused with 
     # the link between Sample wise, columns, and Sample IDs
     if(rownames(.data) |> is.null() | colnames(.data) |> is.null() )
-      warning("tidySummarizedExperiment says: the nesting and unnesting operations require row names and column names to avoid side-effects. Therefore, doors will be added as \"1\", \"2\", \"3\".")
+      tidy_warning("the nesting and unnesting operations require row names and column names to avoid side-effects. Therefore, doors will be added as \"1\", \"2\", \"3\".")
     if(rownames(.data) |> is.null() ) rownames(.data) = .data |> nrow() |> seq_len() |> as.character()
     if(colnames(.data) |> is.null() ) colnames(.data) = .data |> ncol() |> seq_len() |> as.character()
     
@@ -270,11 +268,12 @@ nest.SummarizedExperiment <- function(.data, ..., .names_sep=NULL) {
         # Check that other column are there
         length(colnames(my_test_nest)) > 2
     ) {
-        stop("tidySummarizedExperiment says:",
-            " You cannot have the columns feature among the nesting",
-            " mixed with other nesting for efficiency reasons.",
-            " Please consider to convert to_tibble() first.",
-            " We are working for optimising a generalised solution of nest().")
+        tidy_stop(paste0(
+            "You cannot have the columns feature among the nesting ",
+            "mixed with other nesting for efficiency reasons. ",
+            "Please consider to convert to_tibble() first. ",
+            "We are working for optimising a generalised solution of nest()."
+        ))
     }
 
     # If I nest only for .feature -> THIS WORKS ONLY WITH THE CHECK ABOVE
@@ -391,14 +390,13 @@ extract.SummarizedExperiment <- function(data, col,
 
     if (tst) {
         columns <- special_columns |>  paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
+        tidy_stop(paste0(
+            "you are trying to rename a column that is view only ",
             columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
+            " (it is not present in the colData). ",
+            "If you want to mutate a view-only column, ",
+            "make a copy and mutate that one."
+        ))
     }
 
     # Subset column annotation
@@ -463,6 +461,7 @@ extract.SummarizedExperiment <- function(data, col,
 #'         names_to="name", values_to="value")
 #' 
 #' @importFrom tidyr pivot_longer
+#' @importFrom tidyprint tidy_message
 #' @references
 #' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
 #' 
@@ -477,7 +476,7 @@ pivot_longer.SummarizedExperiment <- function(data,
 
     cols <- enquo(cols)
 
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     # Deprecation of special column names
     if(is_sample_feature_deprecated_used(
@@ -526,7 +525,7 @@ pivot_wider.SummarizedExperiment <- function(data,
     name <- enquo(names_from)
     value <- enquo(values_from)
 
-    message(data_frame_returned_message)
+    tidy_message(data_frame_returned_message)
 
     # Deprecation of special column names
     if (is_sample_feature_deprecated_used(
@@ -598,14 +597,13 @@ unite.SummarizedExperiment <- function(data, col, ...,
 
     if (tst) {
         columns <- special_columns |>  paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
+        tidy_stop(paste0(
+            "you are trying to rename a column that is view only ",
             columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
+            " (it is not present in the colData). ",
+            "If you want to mutate a view-only column, ",
+            "make a copy and mutate that one."
+        ))
     }
 
     columns_to_unite <- data[1,1] %>% select(...) %>% colnames()
@@ -704,14 +702,13 @@ separate.SummarizedExperiment <- function(data, col,
  
     if (tst) {
         columns <- special_columns |>  paste(collapse=", ")
-        stop(
-            "tidySummarizedExperiment says:",
-            " you are trying to rename a column that is view only",
+        tidy_stop(paste0(
+            "you are trying to rename a column that is view only ",
             columns,
-            "(it is not present in the colData).",
-            " If you want to mutate a view-only column,",
-            " make a copy and mutate that one."
-        )
+            " (it is not present in the colData). ",
+            "If you want to mutate a view-only column, ",
+            "make a copy and mutate that one."
+        ))
     }
 
 
