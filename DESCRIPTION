@@ -44,7 +44,9 @@ Imports:
     plyxp,
     generics
 Suggests:
+    AnnotationDbi,
     BiocStyle,
+    org.Hs.eg.db,
     testthat,
     knitr,
     markdown,
