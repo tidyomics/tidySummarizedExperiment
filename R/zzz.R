@@ -55,10 +55,8 @@
 .onAttach <- function(libname, pkgname) {
     attached <- tidyverse_attach()
     
-    # Print loading message about printing
-    cli::cli_alert_info(paste0(
-        "tidySummarizedExperiment says: The tidy printing is now handled externally.\n",
-        "If you want to visualize the data in a tidy way, do `library(tidyprint)`.\n",
-        "See `https://github.com/tidyomics/tidyprint` for more information."
-    ))
+    tidyprint::tidy_message(
+        "By default SummarizedExperiment uses the standard display. For a tidy tibble-style display, run tidy_print_on(remember = TRUE).",
+        type = "info"
+    )
 }
