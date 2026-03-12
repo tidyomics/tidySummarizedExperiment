@@ -87,6 +87,11 @@ library(dplyr)
 library(tidySummarizedExperiment)
 ```
 
+```{r, echo=FALSE}
+# Use standard print in vignette to avoid tidyprint display bug with pasilla (7 cols)
+tidy_print_off()
+```
+
 
 # Create `tidySummarizedExperiment`, the best of both worlds!
 
