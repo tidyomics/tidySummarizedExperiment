@@ -1052,26 +1052,6 @@ is_sample_feature_deprecated_used <- function(.data, user_columns, use_old_speci
 data_frame_returned_message <- "A data frame is returned for independent data analysis."
 duplicated_cell_names <- "This operation lead to duplicated feature names. A data frame is returned for independent data analysis."
 
-#' Format message with package prefix (tidyprint-style)
-#' @keywords internal
-tidy_format_message <- function(message) {
-  calling_package <- utils::packageName(parent.frame(n = 2))
-  prefix <- if (is.null(calling_package)) "Console" else calling_package
-  paste0(prefix, " says: ", message)
-}
-
-#' Emit a warning with tidyprint-style package prefix
-#' @keywords internal
-tidy_warning <- function(message) {
-  warning(tidy_format_message(message), call. = FALSE)
-}
-
-#' Emit an error with tidyprint-style package prefix
-#' @keywords internal
-tidy_stop <- function(message) {
-  stop(tidy_format_message(message), call. = FALSE)
-}
-
 # Key column names
 #' @importFrom S4Vectors metadata
 #' @importFrom S4Vectors metadata<-
