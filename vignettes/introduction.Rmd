@@ -43,7 +43,7 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 
 # Introduction
 
-tidySummarizedExperiment provides a bridge between Bioconductor [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html) [@morgan2020summarized] and the tidyverse [@wickham2019welcome]. It creates an invisible layer that enables viewing the
+tidySummarizedExperiment provides a bridge between Bioconductor [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html) [@morgan2020summarized] and the tidyverse [@wickham2019welcome] as part of the tidyomics ecosystem [@hutchison2024tidyomics]. It creates an invisible layer that enables viewing the
 Bioconductor *SummarizedExperiment* object as a tidyverse tibble, and provides SummarizedExperiment-compatible *dplyr*, *tidyr*, *ggplot* and *plotly* functions. This allows users to get the best of both Bioconductor and tidyverse worlds.
 
 
@@ -76,7 +76,7 @@ BiocManager::install("tidySummarizedExperiment")
 
 From Github (development)
 ```{r, eval=FALSE}
-remotes::install_github("stemangiola/tidySummarizedExperiment")
+remotes::install_github("tidyomics/tidySummarizedExperiment")
 ```
 
 Load libraries used in the examples.
@@ -88,12 +88,49 @@ library(tidySummarizedExperiment)
 ```
 
 ```{r, echo=FALSE}
-# Use standard print in vignette to avoid tidyprint display bug with pasilla (7 cols)
+# Use standard print for initial examples
 tidy_print_off()
 ```
 
 
-# Create `tidySummarizedExperiment`, the best of both worlds!
+# Opting In and Out of Tidy Print
+
+By default, the standard SummarizedExperiment print format is used. You can opt in to use the tidy tibble-style display, and opt out at any time. The setting can be configured for the current R session only, or saved to persist across sessions.
+
+**Opt In to Tidy Print**
+
+To enable the tidy print format, use `tidy_print_on()`. By default, this only affects the current R session:
+
+```{r, eval=FALSE}
+# Enable tidy print for current session only
+tidy_print_on()
+pasilla_tidy  # Will display with tidy tibble-style format
+```
+
+If you want the setting to persist across R sessions, use `remember = TRUE`:
+
+```{r, eval=FALSE}
+# Enable tidy print and remember the setting
+tidy_print_on(remember = TRUE)
+```
+
+**Opt Out of Tidy Print**
+
+To return to the standard SummarizedExperiment print format, use `tidy_print_off()`. By default, this only affects the current session:
+
+```{r, eval=FALSE}
+# Disable tidy print for current session only
+tidy_print_off()
+```
+
+To permanently disable tidy print and clear any saved preference:
+
+```{r, eval=FALSE}
+tidy_print_off(remember = TRUE)
+```
+
+
+# `tidySummarizedExperiment`, the best of two worlds!
 
 This is a SummarizedExperiment object but it is evaluated as a tibble. So it is fully compatible both with SummarizedExperiment and tidyverse APIs.
 
@@ -104,6 +141,7 @@ pasilla_tidy <- tidySummarizedExperiment::pasilla
 **It looks like a tibble**
 
 ```{r}
+tidy_print_on()
 pasilla_tidy
 ```
 
