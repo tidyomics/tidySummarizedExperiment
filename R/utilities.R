@@ -1050,7 +1050,7 @@ is_sample_feature_deprecated_used <- function(.data, user_columns, use_old_speci
 }
 
 data_frame_returned_message <- "A data frame is returned for independent data analysis."
-duplicated_cell_names <- "This operation lead to duplicated feature names. A data frame is returned for independent data analysis."
+duplicated_cell_names <- "This operation led to duplicated feature names. A data frame is returned for independent data analysis."
 
 # Key column names
 #' @importFrom S4Vectors metadata
