@@ -84,7 +84,7 @@ unnest_summarized_experiment <- function(data, cols, ...,
         tidy_stop(paste0(
             "for the moment nesting both by sample- and feature-wise ",
             "information is not possible. Please ask this feature ",
-            "to github/stemangiola/tidySummarizedExperiment")
+            "to github/tidyomics/tidySummarizedExperiment")
         )
     }
   
