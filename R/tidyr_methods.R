@@ -234,7 +234,7 @@ nest.SummarizedExperiment <- function(.data, ..., .names_sep=NULL) {
     # we have to add them, otherwise the nesting and a nesting will get confused with 
     # the link between Sample wise, columns, and Sample IDs
     if(rownames(.data) |> is.null() | colnames(.data) |> is.null() )
-      tidy_warning("the nesting and unnesting operations require row names and column names to avoid side-effects. Therefore, doors will be added as \"1\", \"2\", \"3\".")
+      tidy_warning("the nesting and unnesting operations require row names and column names to avoid side-effects. Therefore, default row and column names \"1\", \"2\", \"3\", ... will be added.")
     if(rownames(.data) |> is.null() ) rownames(.data) = .data |> nrow() |> seq_len() |> as.character()
     if(colnames(.data) |> is.null() ) colnames(.data) = .data |> ncol() |> seq_len() |> as.character()
     
