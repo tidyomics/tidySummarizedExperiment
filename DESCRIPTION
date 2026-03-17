@@ -21,8 +21,8 @@ Depends:
     SummarizedExperiment,
     ttservice (>= 0.5.0)
 Imports:
-	tidyprint,
-	dplyr,
+    tidyprint,
+    dplyr,
     tibble (>= 3.0.4),
     magrittr,
     tidyr,
