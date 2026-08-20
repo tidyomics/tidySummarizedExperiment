@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.23.2</span>
       </span>
     </div>
 
@@ -81,7 +81,7 @@ Mangiola</h4>
             
             <h4 data-toc-skip class="date">2026-08-20</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/vignettes/introduction.Rmd" class="external-link"><code>vignettes/introduction.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/use-tidyprint/vignettes/introduction.Rmd" class="external-link"><code>vignettes/introduction.Rmd</code></a></small>
       <div class="hidden name"><code>introduction.Rmd</code></div>
 
     </div>
@@ -116,7 +116,8 @@ for heatmaps produced with tidy principles</li>
 <p>tidySummarizedExperiment provides a bridge between Bioconductor <a href="https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html" class="external-link">SummarizedExperiment</a>
 <span class="citation">(Morgan et al. 2020)</span> and the tidyverse
 <span class="citation">(<span class="nocase">Wickham et al.</span>
-2019)</span>. It creates an invisible layer that enables viewing the
+2019)</span> as part of the tidyomics ecosystem <span class="citation">(<span class="nocase">Hutchison et al.</span>
+2024)</span>. It creates an invisible layer that enables viewing the
 Bioconductor <em>SummarizedExperiment</em> object as a tidyverse tibble,
 and provides SummarizedExperiment-compatible <em>dplyr</em>,
 <em>tidyr</em>, <em>ggplot</em> and <em>plotly</em> functions. This
@@ -189,7 +190,7 @@ SummarizedExperiment object, just better</td>
 <span><span class="fu">BiocManager</span><span class="fu">::</span><span class="fu"><a href="https://bioconductor.github.io/BiocManager/reference/install.html" class="external-link">install</a></span><span class="op">(</span><span class="st">"tidySummarizedExperiment"</span><span class="op">)</span></span></code></pre></div>
 <p>From Github (development)</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"stemangiola/tidySummarizedExperiment"</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"tidyomics/tidySummarizedExperiment"</span><span class="op">)</span></span></code></pre></div>
 <p>Load libraries used in the examples.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
@@ -198,28 +199,67 @@ SummarizedExperiment object, just better</td>
 </div>
 </div>
 <div class="section level2">
-<h2 id="create-tidysummarizedexperiment-the-best-of-both-worlds">Create <code>tidySummarizedExperiment</code>, the best of both
-worlds!<a class="anchor" aria-label="anchor" href="#create-tidysummarizedexperiment-the-best-of-both-worlds"></a>
+<h2 id="opting-in-and-out-of-tidy-print">Opting In and Out of Tidy Print<a class="anchor" aria-label="anchor" href="#opting-in-and-out-of-tidy-print"></a>
+</h2>
+<p>By default, the standard SummarizedExperiment print format is used.
+You can opt in to use the tidy tibble-style display, and opt out at any
+time. The setting can be configured for the current R session only, or
+saved to persist across sessions.</p>
+<p><strong>Opt In to Tidy Print</strong></p>
+<p>To enable the tidy print format, use <code><a href="../reference/tidy_print.html">tidy_print_on()</a></code>. By
+default, this only affects the current R session:</p>
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Enable tidy print for current session only</span></span>
+<span><span class="fu"><a href="../reference/tidy_print.html">tidy_print_on</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">pasilla_tidy</span>  <span class="co"># Will display with tidy tibble-style format</span></span></code></pre></div>
+<p>If you want the setting to persist across R sessions, use
+<code>remember = TRUE</code>:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Enable tidy print and remember the setting</span></span>
+<span><span class="fu"><a href="../reference/tidy_print.html">tidy_print_on</a></span><span class="op">(</span>remember <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p><strong>Opt Out of Tidy Print</strong></p>
+<p>To return to the standard SummarizedExperiment print format, use
+<code><a href="../reference/tidy_print.html">tidy_print_off()</a></code>. By default, this only affects the current
+session:</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># Disable tidy print for current session only</span></span>
+<span><span class="fu"><a href="../reference/tidy_print.html">tidy_print_off</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<p>To permanently disable tidy print and clear any saved preference:</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy_print.html">tidy_print_off</a></span><span class="op">(</span>remember <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="tidysummarizedexperiment-the-best-of-two-worlds">
+<code>tidySummarizedExperiment</code>, the best of two worlds!<a class="anchor" aria-label="anchor" href="#tidysummarizedexperiment-the-best-of-two-worlds"></a>
 </h2>
 <p>This is a SummarizedExperiment object but it is evaluated as a
 tibble. So it is fully compatible both with SummarizedExperiment and
 tidyverse APIs.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op">&lt;-</span> <span class="fu">tidySummarizedExperiment</span><span class="fu">::</span><span class="va"><a href="../reference/pasilla.html">pasilla</a></span> </span></code></pre></div>
 <p><strong>It looks like a tibble</strong></p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">pasilla_tidy</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 14599 7 </span></span>
-<span><span class="co">## metadata(0):</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(7): untrt1 untrt2 ... trt2 trt3</span></span>
-<span><span class="co">## colData names(2): condition type</span></span></code></pre>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tidy_print.html">tidy_print_on</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">pasilla_tidy</span></span></code></pre></div>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                                  |------ COVARIATES ----|</span></span></span>
+<span><span class="co">##        .feature    .sample | counts | condition type       |</span></span>
+<span><span class="co">##        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1     </span> FBgn0000003 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2     </span> FBgn0000008 untrt1  | 92     | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3     </span> FBgn0000014 untrt1  | 5      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4     </span> FBgn0000015 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5     </span> FBgn0000017 untrt1  | 4664   | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">      </span> --------    ------- - ------ - --------- ----       -</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102189</span> FBgn0261571 trt3    | 0      | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102190</span> FBgn0261572 trt3    | 3      | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102191</span> FBgn0261573 trt3    | 1908   | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102192</span> FBgn0261574 trt3    | 3047   | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102193</span> FBgn0261575 trt3    | 4      | treated   paired_end |</span></span></code></pre>
 <p><strong>But it is a SummarizedExperiment object after
 all</strong></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html" class="external-link">assays</a></span><span class="op">(</span><span class="va">pasilla_tidy</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## List of length 1</span></span>
 <span><span class="co">## names(1): counts</span></span></code></pre>
@@ -231,31 +271,37 @@ all</strong></p>
 SummarizedExperiment object.</p>
 <p>We can use <code>slice</code> to choose rows by position, for example
 to choose the first row.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/slice.html" class="external-link">slice</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 1 1 </span></span>
-<span><span class="co">## metadata(1): latest_join_scope_report</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(1): FBgn0000003</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(1): untrt1</span></span>
-<span><span class="co">## colData names(2): condition type</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=1 | Samples=1 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                             |------ COVARIATES ----|</span></span></span>
+<span><span class="co">##   .feature    .sample | counts | condition type       |</span></span>
+<span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   |  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1</span> FBgn0000003 untrt1  |      0 | untreated single_end |</span></span></code></pre>
 <p>We can use <code>filter</code> to choose rows by criteria.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/filter.html">filter</a></span><span class="op">(</span><span class="va">condition</span> <span class="op">==</span> <span class="st">"untreated"</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 14599 4 </span></span>
-<span><span class="co">## metadata(1): latest_filter_scope_report</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(4): untrt1 untrt2 untrt3 untrt4</span></span>
-<span><span class="co">## colData names(2): condition type</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=4 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                                 |------ COVARIATES ----|</span></span></span>
+<span><span class="co">##       .feature    .sample | counts | condition type       |</span></span>
+<span><span class="co">##       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1    </span> FBgn0000003 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2    </span> FBgn0000008 untrt1  | 92     | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3    </span> FBgn0000014 untrt1  | 5      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4    </span> FBgn0000015 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5    </span> FBgn0000017 untrt1  | 4664   | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">     </span> --------    ------- - ------ - --------- ----       -</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">58392</span> FBgn0261571 untrt4  | 0      | untreated paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">58393</span> FBgn0261572 untrt4  | 11     | untreated paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">58394</span> FBgn0261573 untrt4  | 1612   | untreated paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">58395</span> FBgn0261574 untrt4  | 2819   | untreated paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">58396</span> FBgn0261575 untrt4  | 3      | untreated paired_end |</span></span></code></pre>
 <p>We can use <code>select</code> to choose columns.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/select.html">select</a></span><span class="op">(</span><span class="va">.sample</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 102,193 × 1</span></span></span>
@@ -274,7 +320,7 @@ to choose the first row.</p>
 <span><span class="co">## <span style="color: #949494;"># ℹ 102,183 more rows</span></span></span></code></pre>
 <p>We can use <code>count</code> to count how many rows we have for each
 sample.</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">.sample</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 7 × 2</span></span></span>
@@ -289,7 +335,7 @@ sample.</p>
 <span><span class="co">## <span style="color: #BCBCBC;">7</span> untrt4  <span style="text-decoration: underline;">14</span>599</span></span></code></pre>
 <p>We can use <code>distinct</code> to see what distinct sample
 information we have.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/distinct.html">distinct</a></span><span class="op">(</span><span class="va">.sample</span>, <span class="va">condition</span>, <span class="va">type</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 7 × 3</span></span></span>
@@ -304,48 +350,72 @@ information we have.</p>
 <span><span class="co">## <span style="color: #BCBCBC;">7</span> trt3    treated   paired_end</span></span></code></pre>
 <p>We could use <code>rename</code> to rename a column. For example, to
 modify the type column name.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>sequencing<span class="op">=</span><span class="va">type</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 14599 7 </span></span>
-<span><span class="co">## metadata(0):</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(7): untrt1 untrt2 ... trt2 trt3</span></span>
-<span><span class="co">## colData names(2): condition sequencing</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                                  |------ COVARIATES ----|</span></span></span>
+<span><span class="co">##        .feature    .sample | counts | condition sequencing |</span></span>
+<span><span class="co">##        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1     </span> FBgn0000003 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2     </span> FBgn0000008 untrt1  | 92     | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3     </span> FBgn0000014 untrt1  | 5      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4     </span> FBgn0000015 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5     </span> FBgn0000017 untrt1  | 4664   | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">      </span> --------    ------- - ------ - --------- ---------- -</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102189</span> FBgn0261571 trt3    | 0      | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102190</span> FBgn0261572 trt3    | 3      | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102191</span> FBgn0261573 trt3    | 1908   | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102192</span> FBgn0261574 trt3    | 3047   | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102193</span> FBgn0261575 trt3    | 4      | treated   paired_end |</span></span></code></pre>
 <p>We could use <code>mutate</code> to create a column. For example, we
 could create a new type column that contains single and paired instead
 of single_end and paired_end.</p>
-<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/mutate.html">mutate</a></span><span class="op">(</span>type<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/grep.html" class="external-link">gsub</a></span><span class="op">(</span><span class="st">"_end"</span>, <span class="st">""</span>, <span class="va">type</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 14599 7 </span></span>
-<span><span class="co">## metadata(1): latest_mutate_scope_report</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(7): untrt1 untrt2 ... trt2 trt3</span></span>
-<span><span class="co">## colData names(2): condition type</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                                  |---- COVARIATES --|</span></span></span>
+<span><span class="co">##        .feature    .sample | counts | condition type   |</span></span>
+<span><span class="co">##        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1     </span> FBgn0000003 untrt1  | 0      | untreated single |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2     </span> FBgn0000008 untrt1  | 92     | untreated single |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3     </span> FBgn0000014 untrt1  | 5      | untreated single |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4     </span> FBgn0000015 untrt1  | 0      | untreated single |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5     </span> FBgn0000017 untrt1  | 4664   | untreated single |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">      </span> --------    ------- - ------ - --------- ----   -</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102189</span> FBgn0261571 trt3    | 0      | treated   paired |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102190</span> FBgn0261572 trt3    | 3      | treated   paired |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102191</span> FBgn0261573 trt3    | 1908   | treated   paired |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102192</span> FBgn0261574 trt3    | 3047   | treated   paired |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102193</span> FBgn0261575 trt3    | 4      | treated   paired |</span></span></code></pre>
 <p>We could use <code>unite</code> to combine multiple columns into a
 single column.</p>
-<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/unite.html">unite</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">condition</span>, <span class="va">type</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 14599 7 </span></span>
-<span><span class="co">## metadata(0):</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(7): untrt1 untrt2 ... trt2 trt3</span></span>
-<span><span class="co">## colData names(1): group</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                                  |------ COVARIATES ----|</span></span></span>
+<span><span class="co">##        .feature    .sample | counts | group                |</span></span>
+<span><span class="co">##        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1     </span> FBgn0000003 untrt1  | 0      | untreated_single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2     </span> FBgn0000008 untrt1  | 92     | untreated_single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3     </span> FBgn0000014 untrt1  | 5      | untreated_single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4     </span> FBgn0000015 untrt1  | 0      | untreated_single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5     </span> FBgn0000017 untrt1  | 4664   | untreated_single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">      </span> --------    ------- - ------ - -----                -</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102189</span> FBgn0261571 trt3    | 0      | treated_paired_end   |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102190</span> FBgn0261572 trt3    | 3      | treated_paired_end   |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102191</span> FBgn0261573 trt3    | 1908   | treated_paired_end   |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102192</span> FBgn0261574 trt3    | 3047   | treated_paired_end   |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102193</span> FBgn0261575 trt3    | 4      | treated_paired_end   |</span></span></code></pre>
 <p>We can use <code>append_samples</code> to combine multiple
 SummarizedExperiment objects by samples. It is equivalent to
 <code>cbind</code> but it is a tidyverse-like function.</p>
-<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Create two subsets of the data</span></span>
 <span><span class="va">pasilla_subset1</span> <span class="op">&lt;-</span> <span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/filter.html">filter</a></span><span class="op">(</span><span class="va">condition</span> <span class="op">==</span> <span class="st">"untreated"</span><span class="op">)</span></span>
@@ -356,19 +426,27 @@ SummarizedExperiment objects by samples. It is equivalent to
 <span><span class="co"># Combine them using append_samples</span></span>
 <span><span class="va">combined_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/append_samples.html">append_samples</a></span><span class="op">(</span><span class="va">pasilla_subset1</span>, <span class="va">pasilla_subset2</span><span class="op">)</span></span>
 <span><span class="va">combined_data</span></span></code></pre></div>
-<pre><code><span><span class="co">## class: SummarizedExperiment </span></span>
-<span><span class="co">## dim: 14599 7 </span></span>
-<span><span class="co">## metadata(2): latest_filter_scope_report latest_filter_scope_report</span></span>
-<span><span class="co">## assays(1): counts</span></span>
-<span><span class="co">## rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span></span>
-<span><span class="co">## rowData names(0):</span></span>
-<span><span class="co">## colnames(7): untrt1 untrt2 ... trt2 trt3</span></span>
-<span><span class="co">## colData names(2): condition type</span></span></code></pre>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span></span>
+<span><span class="co">## # <span style="color: #555555;">  Assays=counts</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #5555FF;">                                  |------ COVARIATES ----|</span></span></span>
+<span><span class="co">##        .feature    .sample | counts | condition type       |</span></span>
+<span><span class="co">##        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">1     </span> FBgn0000003 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">2     </span> FBgn0000008 untrt1  | 92     | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">3     </span> FBgn0000014 untrt1  | 5      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">4     </span> FBgn0000015 untrt1  | 0      | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">5     </span> FBgn0000017 untrt1  | 4664   | untreated single_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">      </span> --------    ------- - ------ - --------- ----       -</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102189</span> FBgn0261571 trt3    | 0      | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102190</span> FBgn0261572 trt3    | 3      | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102191</span> FBgn0261573 trt3    | 1908   | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102192</span> FBgn0261574 trt3    | 3047   | treated   paired_end |</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">102193</span> FBgn0261575 trt3    | 4      | treated   paired_end |</span></span></code></pre>
 <p>We can also combine commands with the tidyverse pipe
 <code>%&gt;%</code>.</p>
 <p>For example, we could combine <code>group_by</code> and
 <code>summarise</code> to get the total counts for each sample.</p>
-<div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">.sample</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/summarise.html">summarise</a></span><span class="op">(</span>total_counts<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -384,7 +462,7 @@ SummarizedExperiment objects by samples. It is equivalent to
 <span><span class="co">## <span style="color: #BCBCBC;">7</span> untrt4       9<span style="text-decoration: underline;">841</span>335</span></span></code></pre>
 <p>We could combine <code>group_by</code>, <code>mutate</code> and
 <code>filter</code> to get the transcripts with mean count &gt; 0.</p>
-<div class="sourceCode" id="cb29"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/group_by.html">group_by</a></span><span class="op">(</span><span class="va">.feature</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/mutate.html">mutate</a></span><span class="op">(</span>mean_count<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
@@ -408,7 +486,7 @@ SummarizedExperiment objects by samples. It is equivalent to
 <div class="section level2">
 <h2 id="plotting">Plotting<a class="anchor" aria-label="anchor" href="#plotting"></a>
 </h2>
-<div class="sourceCode" id="cb31"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb35"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">my_theme</span> <span class="op">&lt;-</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>        <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_brewer.html" class="external-link">scale_fill_brewer</a></span><span class="op">(</span>palette<span class="op">=</span><span class="st">"Set1"</span><span class="op">)</span>,</span>
@@ -430,7 +508,7 @@ SummarizedExperiment objects by samples. It is equivalent to
 <p>We can treat <code>pasilla_tidy</code> as a normal tibble for
 plotting.</p>
 <p>Here we plot the distribution of counts per sample.</p>
-<div class="sourceCode" id="cb32"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb36"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">pasilla_tidy</span> <span class="op"><a href="../reference/pipe.html">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="../reference/ggplot.html">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">counts</span> <span class="op">+</span> <span class="fl">1</span>, group<span class="op">=</span><span class="va">.sample</span>, color<span class="op">=</span><span class="va">`type`</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>    <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_density.html" class="external-link">geom_density</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
@@ -441,7 +519,7 @@ plotting.</p>
 <div class="section level2">
 <h2 id="session-info">Session Info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb33"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb37"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">## Platform: x86_64-pc-linux-gnu</span></span>
@@ -467,7 +545,7 @@ plotting.</p>
 <span><span class="co">## [8] base     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## other attached packages:</span></span>
-<span><span class="co">##  [1] tidyr_1.3.2                     tidySummarizedExperiment_1.20.3</span></span>
+<span><span class="co">##  [1] tidyr_1.3.2                     tidySummarizedExperiment_1.23.2</span></span>
 <span><span class="co">##  [3] ttservice_0.5.3                 SummarizedExperiment_1.43.0    </span></span>
 <span><span class="co">##  [5] Biobase_2.73.2                  GenomicRanges_1.65.1           </span></span>
 <span><span class="co">##  [7] Seqinfo_1.3.0                   IRanges_2.47.2                 </span></span>
@@ -477,31 +555,37 @@ plotting.</p>
 <span><span class="co">## [15] ggplot2_4.0.3                   knitr_1.51                     </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## loaded via a namespace (and not attached):</span></span>
-<span><span class="co">##  [1] utf8_1.2.6          plotly_4.12.1       sass_0.4.10        </span></span>
-<span><span class="co">##  [4] SparseArray_1.13.2  prettydoc_0.4.1     stringi_1.8.9      </span></span>
-<span><span class="co">##  [7] lattice_0.23-1      digest_0.6.39       magrittr_2.0.5     </span></span>
-<span><span class="co">## [10] evaluate_1.0.5      grid_4.6.1          RColorBrewer_1.1-3 </span></span>
-<span><span class="co">## [13] fastmap_1.2.0       jsonlite_2.0.0      Matrix_1.7-6       </span></span>
-<span><span class="co">## [16] httr_1.4.8          purrr_1.2.2         viridisLite_0.4.3  </span></span>
-<span><span class="co">## [19] scales_1.4.0        textshaping_1.0.5   jquerylib_0.1.4    </span></span>
-<span><span class="co">## [22] abind_1.4-8         cli_3.6.6           rlang_1.3.0        </span></span>
-<span><span class="co">## [25] XVector_0.53.0      ellipsis_0.3.3      withr_3.0.3        </span></span>
-<span><span class="co">## [28] cachem_1.1.0        DelayedArray_0.39.5 yaml_2.3.12        </span></span>
-<span><span class="co">## [31] otel_0.2.0          S4Arrays_1.13.0     tools_4.6.1        </span></span>
-<span><span class="co">## [34] vctrs_0.7.3         R6_2.6.1            lifecycle_1.0.5    </span></span>
-<span><span class="co">## [37] stringr_1.6.0       fs_2.1.0            htmlwidgets_1.6.4  </span></span>
-<span><span class="co">## [40] ragg_1.5.2          pkgconfig_2.0.3     desc_1.4.3         </span></span>
-<span><span class="co">## [43] pkgdown_2.2.1       pillar_1.11.1       bslib_0.12.0       </span></span>
-<span><span class="co">## [46] gtable_0.3.6        data.table_1.18.4   glue_1.8.1         </span></span>
-<span><span class="co">## [49] systemfonts_1.3.2   xfun_0.60           tibble_3.3.1       </span></span>
-<span><span class="co">## [52] tidyselect_1.2.1    farver_2.1.2        htmltools_0.5.9    </span></span>
-<span><span class="co">## [55] labeling_0.4.3      rmarkdown_2.31      compiler_4.6.1     </span></span>
-<span><span class="co">## [58] S7_0.2.2</span></span></code></pre>
+<span><span class="co">##  [1] gtable_0.3.6        xfun_0.60           bslib_0.12.0       </span></span>
+<span><span class="co">##  [4] htmlwidgets_1.6.4   lattice_0.23-1      vctrs_0.7.3        </span></span>
+<span><span class="co">##  [7] tools_4.6.1         tidyprint_1.1.0     tibble_3.3.1       </span></span>
+<span><span class="co">## [10] fansi_1.0.7         pkgconfig_2.0.3     Matrix_1.7-6       </span></span>
+<span><span class="co">## [13] data.table_1.18.4   RColorBrewer_1.1-3  S7_0.2.2           </span></span>
+<span><span class="co">## [16] desc_1.4.3          lifecycle_1.0.5     compiler_4.6.1     </span></span>
+<span><span class="co">## [19] farver_2.1.2        stringr_1.6.0       textshaping_1.0.5  </span></span>
+<span><span class="co">## [22] prettydoc_0.4.1     htmltools_0.5.9     sass_0.4.10        </span></span>
+<span><span class="co">## [25] yaml_2.3.12         plotly_4.12.1       pillar_1.11.1      </span></span>
+<span><span class="co">## [28] pkgdown_2.2.1       jquerylib_0.1.4     ellipsis_0.3.3     </span></span>
+<span><span class="co">## [31] DelayedArray_0.39.5 cachem_1.1.0        abind_1.4-8        </span></span>
+<span><span class="co">## [34] tidyselect_1.2.1    digest_0.6.39       stringi_1.8.9      </span></span>
+<span><span class="co">## [37] purrr_1.2.2         labeling_0.4.3      fastmap_1.2.0      </span></span>
+<span><span class="co">## [40] grid_4.6.1          cli_3.6.6           SparseArray_1.13.2 </span></span>
+<span><span class="co">## [43] magrittr_2.0.5      S4Arrays_1.13.0     utf8_1.2.6         </span></span>
+<span><span class="co">## [46] withr_3.0.3         scales_1.4.0        rmarkdown_2.31     </span></span>
+<span><span class="co">## [49] XVector_0.53.0      httr_1.4.8          otel_0.2.0         </span></span>
+<span><span class="co">## [52] ragg_1.5.2          evaluate_1.0.5      viridisLite_0.4.3  </span></span>
+<span><span class="co">## [55] rlang_1.3.0         glue_1.8.1          jsonlite_2.0.0     </span></span>
+<span><span class="co">## [58] R6_2.6.1            systemfonts_1.3.2   fs_2.1.0</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 class="unnumbered" id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
 </h2>
 <div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-hutchison2024tidyomics" class="csl-entry">
+<span class="nocase">Hutchison, William J, Timothy J Keyes, The
+tidyomics Consortium, et al.</span> 2024. <span>“The Tidyomics
+Ecosystem: Enhancing Omic Data Analyses.”</span> <em>Nature Methods</em>
+21 (8): 1166–70. <a href="https://doi.org/10.1038/s41592-024-02299-2" class="external-link">https://doi.org/10.1038/s41592-024-02299-2</a>.
+</div>
 <div id="ref-morgan2020summarized" class="csl-entry">
 Morgan, Martin, Valerie Obenchain, Jim Hester, and Hervé Pagès. 2020.
 <em>SummarizedExperiment: SummarizedExperiment Container</em>.

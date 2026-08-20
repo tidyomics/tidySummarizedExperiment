@@ -28,7 +28,7 @@ each group."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.23.2</span>
       </span>
     </div>
 
@@ -62,7 +62,7 @@ each group."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Subset rows using their positions</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/use-tidyprint/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
     <div class="hidden name"><code>slice.Rd</code></div>
     </div>
 
@@ -170,14 +170,12 @@ individual methods for extra arguments and differences in behaviour.</p>
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">pasilla</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pasilla</span> <span class="op">|&gt;</span> <span class="fu">slice</span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> class: SummarizedExperiment </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> dim: 1 1 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> metadata(1): latest_join_scope_report</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assays(1): counts</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rownames(1): FBgn0000003</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rowData names(0):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> colnames(1): untrt1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> colData names(2): condition type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=1 | Samples=1 | </span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # <span style="color: #555555;">  Assays=counts</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># </span><span style="color: #5555FF;">                             |------ COVARIATES ----|</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   .feature    .sample | counts | condition type       |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   |  <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1</span> FBgn0000003 untrt1  |      0 | untreated single_end |</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

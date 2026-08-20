@@ -19,7 +19,7 @@ name the output."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.23.2</span>
       </span>
     </div>
 
@@ -53,7 +53,7 @@ name the output."><!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Extract a single column</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/use-tidyprint/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
     <div class="hidden name"><code>pull.Rd</code></div>
     </div>
 
@@ -124,7 +124,8 @@ dplyr (<code>data.frame</code>), tidySummarizedExperiment (<code>SummarizedExper
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">pasilla</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pasilla</span> <span class="op">|&gt;</span> <span class="fu">pull</span><span class="op">(</span><span class="va">feature</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>tidySummarizedExperiment says: from version 1.3.1, the special columns including sample/feature id (colnames(se), rownames(se)) has changed to ".sample" and ".feature". This dataset is returned with the old-style vocabulary (feature and sample), however we suggest to update your workflow to reflect the new vocabulary (.feature, .sample)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> tidySummarizedExperiment says: from version 1.3.1, the special columns including sample/feature id (colnames(se), rownames(se)) has changed to ".sample" and ".feature". This dataset is returned with the old-style vocabulary (feature and sample), however we suggest to update your workflow to reflect the new vocabulary (.feature, .sample)</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>from version 1.3.1, the special columns including sample/feature id (colnames(se), rownames(se)) has changed to ".sample" and ".feature". This dataset is returned with the old-style vocabulary (feature and sample), however we suggest to update your workflow to reflect the new vocabulary (.feature, .sample)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     [1] "FBgn0000003" "FBgn0000008" "FBgn0000014" "FBgn0000015" "FBgn0000017"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     [6] "FBgn0000018" "FBgn0000022" "FBgn0000024" "FBgn0000028" "FBgn0000032"</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    [11] "FBgn0000036" "FBgn0000037" "FBgn0000038" "FBgn0000039" "FBgn0000042"</span>

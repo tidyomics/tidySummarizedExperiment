@@ -19,7 +19,7 @@ column) and delete columns (by setting their value to NULL)."><!-- mathjax --><s
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">tidySummarizedExperiment</a>
-        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.20.3</span>
+        <span class="version label label-default" data-toggle="tooltip" data-placement="bottom" title="">1.23.2</span>
       </span>
     </div>
 
@@ -53,7 +53,7 @@ column) and delete columns (by setting their value to NULL)."><!-- mathjax --><s
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Create, modify, and delete columns</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/mutate.R" class="external-link"><code>R/mutate.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/use-tidyprint/R/mutate.R" class="external-link"><code>R/mutate.R</code></a></small>
     <div class="hidden name"><code>mutate.Rd</code></div>
     </div>
 
@@ -165,14 +165,22 @@ dplyr (<code>data.frame</code>), plotly (<code><a href="https://rdrr.io/pkg/plot
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">pasilla</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">pasilla</span> <span class="op">|&gt;</span> <span class="fu">mutate</span><span class="op">(</span>logcounts<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log2</a></span><span class="op">(</span><span class="va">counts</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> class: SummarizedExperiment </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> dim: 14599 7 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> metadata(1): latest_mutate_scope_report</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> assays(2): counts logcounts</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rownames(14599): FBgn0000003 FBgn0000008 ... FBgn0261574 FBgn0261575</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> rowData names(0):</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> colnames(7): untrt1 untrt2 ... trt2 trt3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> colData names(2): condition type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> # <span style="color: #555555;">  Assays=counts, logcounts</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># </span><span style="color: #5555FF;">                                                   |------ COVARIATES ----|</span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        .feature    .sample | counts logcounts        | condition type       |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>   | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            | <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">1     </span> FBgn0000003 untrt1  | 0      -Inf             | untreated single_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">2     </span> FBgn0000008 untrt1  | 92     6.52356195605701 | untreated single_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">3     </span> FBgn0000014 untrt1  | 5      2.32192809488736 | untreated single_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">4     </span> FBgn0000015 untrt1  | 0      -Inf             | untreated single_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">5     </span> FBgn0000017 untrt1  | 4664   12.1873520732005 | untreated single_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">      </span> --------    ------- - ------ ---------        - --------- ----       -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">102189</span> FBgn0261571 trt3    | 0      -Inf             | treated   paired_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">102190</span> FBgn0261572 trt3    | 3      1.58496250072116 | treated   paired_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">102191</span> FBgn0261573 trt3    | 1908   10.8978454560055 | treated   paired_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">102192</span> FBgn0261574 trt3    | 3047   11.5731737846865 | treated   paired_end |</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #BCBCBC;">102193</span> FBgn0261575 trt3    | 4      2                | treated   paired_end |</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
