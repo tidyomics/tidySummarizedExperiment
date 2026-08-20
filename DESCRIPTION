@@ -1,7 +1,7 @@
 Type: Package
 Package: tidySummarizedExperiment
 Title: Brings SummarizedExperiment to the Tidyverse 
-Version: 1.20.3
+Version: 1.23.2
 Authors@R: c(person("Stefano", "Mangiola", email = "mangiolastefano@gmail.com",
                   role = c("aut", "cre")) )
 Author: Stefano Mangiola [aut, cre] <mangiolastefano@gmail.com>
@@ -21,7 +21,8 @@ Depends:
     SummarizedExperiment,
     ttservice (>= 0.5.0)
 Imports:
-	dplyr,
+    tidyprint,
+    dplyr,
     tibble (>= 3.0.4),
     magrittr,
     tidyr,

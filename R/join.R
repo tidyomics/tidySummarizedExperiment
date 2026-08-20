@@ -73,14 +73,14 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
     force_tibble_route) {
     
     # If I have a big dataset
-    if (ncol(x) > 100) message("tidySummarizedExperiment says: if you are joining a dataframe both sample-wise and feature-wise, for efficiency (until further development), it is better to separate your joins and join datasets sample-wise OR feature-wise.")
+    if (ncol(x) > 100) tidyprint::tidy_message("If you are joining a dataframe both sample-wise and feature-wise, for efficiency (until further development), it is better to separate your joins and join datasets sample-wise OR feature-wise.", type = "warning")
     
     joined <- x %>%
       as_tibble(skip_GRanges = TRUE) %>%
       join_function(y, by = by, copy = copy, suffix = suffix, ...)
     out <- if (!is_not_duplicated(joined, x) || !is_rectangular(joined, x)) {
-      message(duplicated_cell_names)
-      message(data_frame_returned_message)
+      tidyprint::tidy_message(duplicated_cell_names, type = "warning")
+      tidyprint::tidy_message(data_frame_returned_message)
       joined
     } else {
       update_SE_from_tibble(joined, x)
@@ -173,7 +173,7 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
     x
   }
   
-  else stop("tidySummarizedExperiment says: ERROR FOR DEVELOPERS: this option should not exist. In join utility.")
+  else tidy_stop("ERROR FOR DEVELOPERS: this option should not exist. In join utility.")
 }
 
 #' @name left_join
@@ -190,6 +190,7 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
 #'     slice(1))
 #'
 #' @importFrom dplyr left_join
+#' @importFrom tidyprint tidy_message
 #' @references
 #' Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics ecosystem: enhancing omic data analyses. Nat Methods 21, 1166–1170 (2024). https://doi.org/10.1038/s41592-024-02299-2
 #' 

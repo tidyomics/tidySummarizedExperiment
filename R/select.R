@@ -62,6 +62,7 @@ analyze_query_scope_select <- function(se, ...) {
 #' 
 #' @importFrom SummarizedExperiment colData
 #' @importFrom dplyr select
+#' @importFrom tidyprint tidy_message
 #' @importFrom tidyselect all_of
 #' @importFrom tidyselect any_of
 #' @export
@@ -82,14 +83,13 @@ select.SummarizedExperiment <- function(.data, ...) {
     # Warning if column names of assays do not overlap
     if (check_if_assays_are_NOT_consistently_ordered(.data)) {
     
-        warning(
-            "tidySummarizedExperiment says:",
-            " the assays in your SummarizedExperiment have column names,",
-            " but their order is not the same. Assays were internally",
-            " reordered to be consistent with each other.",
-            " To avoid unwanted behaviour it is highly reccomended",
-            " to have assays with the same order of colnames and rownames."
-        )
+        tidy_warning(paste0(
+            "the assays in your SummarizedExperiment have column names, ",
+            "but their order is not the same. Assays were internally ",
+            "reordered to be consistent with each other. ",
+            "To avoid unwanted behaviour it is highly recommended ",
+            "to have assays with the same order of colnames and rownames."
+        ))
         
         # reorder assay colnames before printing
         # Rearrange if assays has colnames and rownames
@@ -106,11 +106,10 @@ select.SummarizedExperiment <- function(.data, ...) {
         col_data_tibble <- 
             colData(.data) |> 
             as_tibble(rownames = s_(.data)$name)
-        message(
-            "tidySummarizedExperiment says:",
-            " Key columns are missing.",
-            " A data frame is returned for independent data analysis."
-        )
+        tidy_message(paste0(
+            "Key columns are missing. ",
+            "A data frame is returned for independent data analysis."
+        ))
         return(
             col_data_tibble |> 
                 dplyr::select(tidyselect::eval_select(rlang::expr(c(...)), col_data_tibble)) |> 
@@ -121,9 +120,10 @@ select.SummarizedExperiment <- function(.data, ...) {
         row_data_tibble <-
             rowData(.data) |> 
             as_tibble(rownames=f_(.data)$name)
-        message("tidySummarizedExperiment says:",
-            " Key columns are missing.",
-            " A data frame is returned for independent data analysis.")
+        tidy_message(paste0(
+            "Key columns are missing. ",
+            "A data frame is returned for independent data analysis."
+        ))
         return(
             row_data_tibble |> 
                 dplyr::select(tidyselect::eval_select(rlang::expr(c(...)), row_data_tibble)) |> 
@@ -184,15 +184,17 @@ select.SummarizedExperiment <- function(.data, ...) {
     # convert to tibble and delegate selection to dplyr
     if (!all(c(get_needed_columns(.data)) %in% scope_report$selected_columns)) {
         if (ncol(.data)>100) {
-            message("tidySummarizedExperiment says:",
-                " You are doing a complex selection both sample-wise",
-                " and feature-wise. In the latter case, for efficiency",
-                " (until further development), it is better to separate",
-                " your selects sample-wise OR feature-wise.")
+            tidy_message(
+                paste0(
+                    "You are doing a complex selection both sample-wise ",
+                    "and feature-wise. In the latter case, for efficiency ",
+                    "(until further development), it is better to separate ",
+                    "your selects sample-wise OR feature-wise."
+                ),
+                type = "warning"
+            )
         }
-        message("tidySummarizedExperiment says:",
-            " Key columns are missing.",
-            " A data frame is returned for independent data analysis.")
+        tidy_message(data_frame_returned_message)
     
         .data |>
             as_tibble(skip_GRanges=TRUE) |>
