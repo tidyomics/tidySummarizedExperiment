@@ -109,9 +109,9 @@ Hutchison, W.J., Keyes, T.J., The tidyomics Consortium. et al. The tidyomics eco
 Wickham, H., François, R., Henry, L., Müller, K., Vaughan, D. (2023). dplyr: A Grammar of Data Manipulation. R package version 2.1.4, https://CRAN.R-project.org/package=dplyr
 }
 \seealso{
-Other single table verbs: 
-\code{\link{rename}()},
-\code{\link{slice}()},
-\code{\link{summarise}()}
+Other single table verbs:
+\code{\link{rename}},
+\code{\link{slice}},
+\code{\link{summarise}}
 }
 \concept{single table verbs}
