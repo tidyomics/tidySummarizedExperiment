@@ -41,6 +41,17 @@ test_that("summarise", {
         expect_equal(1)
 })
 
+test_that("grouped summarize does not emit deprecated when warning", {
+    result <- expect_warning(
+        pasilla %>%
+            group_by(condition) %>%
+            summarize(mean_count = mean(counts)),
+        NA
+    )
+
+    expect_equal(nrow(result), 2)
+})
+
 test_that("mutate", {
     pasilla %>%
         mutate(condition = 1) %>%

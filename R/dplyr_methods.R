@@ -365,22 +365,6 @@ slice.SummarizedExperiment <- function(.data, ..., .by = NULL, .preserve = FALSE
   .by <- enquo(.by)
   
     slice_optimised(.data, ..., .by = !!.by, .preserve = .preserve)
-    
-    # .data |>
-    #     as_tibble(skip_GRanges = T) |>
-    #     dplyr::slice(..., .preserve=.preserve) %>%
-    #     when(
-    # 
-    #         # If duplicated sample-feature pair returns tibble
-    #         !is_not_duplicated(., .data) | 
-    #         !is_rectangular(., .data) ~ {
-    #             message(duplicated_cell_names)
-    #             (.)
-    #         },
-    # 
-    #         # Otherwise return updated tidySummarizedExperiment
-    #         ~ update_SE_from_tibble(., .data)
-    #     )
 }
 
 
