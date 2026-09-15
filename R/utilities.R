@@ -532,7 +532,12 @@ get_special_columns <- function(.data) {
     select(-!!f_(.data)$symbol, -!!s_(.data)$symbol) %>%
     colnames()
   
-  colnames_special %>% c(colnames_counts)
+  # Columns contributed by 'auxiliary_colData()' are view-only, so they are
+  # special too and must never be written back to a slot
+  colnames_special %>%
+    c(colnames_counts) |>
+    c(colnames_auxiliary_colData(.data)) |>
+    unique()
 }
 
 #' @importFrom dplyr select
@@ -1004,7 +1009,9 @@ get_ellipse_colnames <- function(...) {
 
 get_colnames_col <- function(x) {
   colnames(colData(x)) %>% 
-    c(s_(x)$name) 
+    c(s_(x)$name) |>
+    c(colnames_auxiliary_colData(x)) |>
+    unique()
 }
 
 get_rownames_col <- function(x) {

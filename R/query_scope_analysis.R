@@ -80,7 +80,9 @@ analyze_query_complexity <- function(se, dots) {
 analyze_expression_dependencies <- function(se, dots) {
   
   # Get available column names from each data type
-  coldata_cols <- colnames(colData(se))
+  # Auxiliary columns are column-aligned and participate as colData-like
+  # variables (view-only when writing back).
+  coldata_cols <- unique(c(colnames(colData(se)), colnames_auxiliary_colData(se)))
   rowdata_cols <- if (.hasSlot(se, "rowData") || .hasSlot(se, "elementMetadata")) {
     colnames(rowData(se))
   } else {
@@ -247,7 +249,7 @@ analyze_query_scope_subset <- function(se, dots) {
 analyze_query_scope_pre_mutate <- function(se, .cols) {
   
   # Get existing column categories
-  existing_coldata_cols <- colnames(colData(se))
+  existing_coldata_cols <- unique(c(colnames(colData(se)), colnames_auxiliary_colData(se)))
   existing_rowdata_cols <- if (.hasSlot(se, "rowData") || .hasSlot(se, "elementMetadata")) {
     colnames(rowData(se))
   } else {
@@ -476,18 +478,16 @@ modify_samples <- function(.data, operation, ...) {
   # Get the dplyr function
   dplyr_fn <- get(operation, envir = asNamespace("dplyr"))
   
-  # Use subset_sample_data for colData tibble with .sample already present
-  modified_coldata <- subset_sample_data(.data) |>
-    dplyr_fn(...) |>
-    DataFrame_rownames(rownames_col = s_(.data)$name)
+  sample_tbl <- tbl_with_joined_auxiliary_columns(.data)
+  extra <- sample_tbl$extra
+  sample_tbl <- sample_tbl$tbl
   
   # Handle operations that might change the number of samples
   if (operation %in% c("filter", "slice", "sample_n", "sample_frac", "distinct")) {
     # These operations can change the number of rows
     # We need to subset the entire SE object accordingly
     
-    # Get the row indices that remain after the operation (with .sample for user refs)
-    original_coldata <- subset_sample_data(.data)
+    original_coldata <- sample_tbl
     original_coldata$.original_index <- seq_len(nrow(original_coldata))
     
     filtered_with_index <- original_coldata |>
@@ -497,9 +497,9 @@ modify_samples <- function(.data, operation, ...) {
     remaining_indices <- filtered_with_index$.original_index
     result_se <- .data[, remaining_indices]
     
-    # Update colData with the modified version (without index and .sample)
+    # Drop auxiliary columns; they are view-only and must not be written to colData
     colData(result_se) <- filtered_with_index |>
-      dplyr::select(-.original_index) |>
+      dplyr::select(-.original_index, -dplyr::any_of(extra)) |>
       DataFrame_rownames(rownames_col = s_(.data)$name) 
 
     
@@ -507,6 +507,10 @@ modify_samples <- function(.data, operation, ...) {
     
   } else {
     # Operations that don't change the number of samples
+    modified_coldata <- sample_tbl |>
+      dplyr_fn(...) |>
+      dplyr::select(-dplyr::any_of(extra)) |>
+      DataFrame_rownames(rownames_col = s_(.data)$name)
     colData(.data) <- modified_coldata
     return(.data)
   }

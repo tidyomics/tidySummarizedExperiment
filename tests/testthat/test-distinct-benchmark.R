@@ -1,6 +1,9 @@
 context("distinct benchmark tests")
 
 library(tidySummarizedExperiment)
+
+# 'microbenchmark' is only suggested, so it may not be installed
+skip_if_not_installed("microbenchmark")
 library(microbenchmark)
 
 test_that("distinct vs select performance benchmark", {

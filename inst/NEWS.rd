@@ -1,6 +1,16 @@
 \name{NEWS}
 \title{News for Package \pkg{tidySummarizedExperiment}}
 
+\section{Changes in version 1.23.3}{
+\itemize{
+    \item Added \code{auxiliary_colData()} as an extension point for column-aligned, view-only metadata (for example reduced dimensions in tidySingleCellExperiment). These columns participate in colData-scoped tidy verbs such as \code{filter()} but are not written back to \code{colData()}.
+    \item \code{as_tibble()} now includes the columns contributed by \code{auxiliary_colData()}. Previously such columns could be used in verbs like \code{filter()} but were not visible in the tibble.
+    \item \code{get_special_columns()} now reports the columns contributed by \code{auxiliary_colData()}, and \code{extract_assay_colnames()} excludes them. Together these keep such columns view-only on the paths that map a tibble back onto the object, which would otherwise copy them into \code{colData()} or add them as new assays.
+    \item Fixed an infinite recursion when a verb was given several comma-separated expressions, for example \code{filter(se, a == 1, b == 2)}. Decomposition spliced arguments such as \code{.preserve} into \code{...}, where the next step mistook them for a further expression to decompose. Each step is now called with those arguments matched to the formals.
+    \item \code{unnest()} now recognises subclasses of \code{SummarizedExperiment}, such as \code{SingleCellExperiment}, which were previously routed down the non-SummarizedExperiment path by an exact class-name comparison.
+    \item Fixed \code{unnest()} referring to an undefined object named \code{se} when deciding how the data had been nested. The key names are now taken from the nested objects. Previously the call only succeeded when an object called \code{se} happened to be visible from the calling scope, and \code{unnest()} preserves the subclass of the nested objects.
+}}
+
 \section{Changes in version 1.19.7}{
 \itemize{
     \item Refactored \code{mutate()}, \code{filter()}, \code{select()} and join methods for \code{SummarizedExperiment} with query-scope analysis and operation decomposition.

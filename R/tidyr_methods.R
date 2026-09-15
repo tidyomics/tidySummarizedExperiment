@@ -55,16 +55,13 @@ unnest_summarized_experiment <- function(data, cols, ...,
   
     cols <- enquo(cols)
   
-    # If the column is not SE do normal stuff
+    # If the column is not SE do normal stuff. Use 'is()' rather than comparing
+    # class names, so that subclasses such as SingleCellExperiment are handled.
     if (
         data %>%
         pull(!!cols) %>%
         .[[1]] %>%
-        class() %>%
-        as.character() %in%
-        c("SummarizedExperiment",
-            "RangedSummarizedExperiment") %>%
-        all() %>%
+        is("SummarizedExperiment") %>%
         not()
     ) {
         return(
@@ -78,9 +75,13 @@ unnest_summarized_experiment <- function(data, cols, ...,
     }
 
 
+    # Take the key names from the nested objects, so that they honour any
+    # renaming recorded in their metadata
+    nested_se <- pull(.data_, !!cols) %>% .[[1]]
+
     # If both nested by transcript and sample
-    if (s_(se)$name %in% colnames(data) &
-        f_(se)$name %in% colnames(data) ) {
+    if (s_(nested_se)$name %in% colnames(data) &
+        f_(nested_se)$name %in% colnames(data) ) {
         tidy_stop(paste0(
             "for the moment nesting both by sample- and feature-wise ",
             "information is not possible. Please ask this feature ",
@@ -89,10 +90,10 @@ unnest_summarized_experiment <- function(data, cols, ...,
     }
   
     # If both nested not by transcript nor sample
-    if(!s_(se)$name %in% colnames(data) &
-        !f_(se)$name %in% colnames(data)) {
+    if(!s_(nested_se)$name %in% colnames(data) &
+        !f_(nested_se)$name %in% colnames(data)) {
     
-        my_se <- pull(.data_, !!cols) %>% .[[1]] 
+        my_se <- nested_se
 
     
         # Mark if columns belong to feature or sample
@@ -182,19 +183,19 @@ unnest_summarized_experiment <- function(data, cols, ...,
     }
   
     # If column is SE nd only feature
-    if (f_(se)$name %in% colnames(data)) {
-        se <- do.call(SummarizedExperiment::rbind, pull(data, !!cols))
-        rowData(se) <- cbind(rowData(se),
-            data %>% select(-!!cols, -!!f_(se)$symbol))
-        return(se)
+    if (f_(nested_se)$name %in% colnames(data)) {
+        out <- do.call(SummarizedExperiment::rbind, pull(data, !!cols))
+        rowData(out) <- cbind(rowData(out),
+            data %>% select(-!!cols, -!!f_(nested_se)$symbol))
+        return(out)
     }
   
     # If column is SE nd only sample
-    if (s_(se)$name %in% colnames(data)) {
-        se <- data |> pull(!!cols) |> reduce_cbind_se()
-        colData(se) <- cbind(colData(se),
-            data %>% select(-!!cols, -!!s_(se)$symbol))
-        return(se)
+    if (s_(nested_se)$name %in% colnames(data)) {
+        out <- data |> pull(!!cols) |> reduce_cbind_se()
+        colData(out) <- cbind(colData(out),
+            data %>% select(-!!cols, -!!s_(nested_se)$symbol))
+        return(out)
     }
 }
 

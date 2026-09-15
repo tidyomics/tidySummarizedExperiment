@@ -139,17 +139,8 @@ decompose_tidy_operation <- function(fx_name, ...) {
   if (length(main_expressions) <= 1) {
     # Single expression - no decomposition needed, but still return executable function
     single_function <- function(se) {
-      if (fx_name == "mutate") {
-        return(se %>% mutate(!!!main_expressions, !!!additional_args))
-      } else if (fx_name == "filter") {
-        return(se %>% filter(!!!main_expressions, !!!additional_args))
-      } else if (fx_name == "select") {
-        return(se %>% select(!!!main_expressions, !!!additional_args))
-      } else {
-        # Generic execution
-        op_call <- rlang::call2(fx_name, se, !!!main_expressions, !!!additional_args)
-        return(rlang::eval_tidy(op_call, env = parent.frame()))
-      }
+      op_call <- rlang::call2(fx_name, se, !!!main_expressions, !!!additional_args)
+      rlang::eval_tidy(op_call, env = parent.frame())
     }
     
     attr(single_function, "decomposed") <- FALSE
@@ -216,18 +207,12 @@ decompose_tidy_operation <- function(fx_name, ...) {
     for (i in seq_along(individual_expressions)) {
       step_expr <- individual_expressions[[i]]
       
-      # Execute this step using the appropriate dplyr function, including additional args
-      if (fx_name == "mutate") {
-        result_se <- result_se %>% mutate(!!!step_expr, !!!additional_args)
-      } else if (fx_name == "filter") {
-        result_se <- result_se %>% filter(!!!step_expr, !!!additional_args)
-      } else if (fx_name == "select") {
-        result_se <- result_se %>% select(!!!step_expr, !!!additional_args)
-      } else {
-        # Generic execution for other operations
-        op_call <- rlang::call2(fx_name, result_se, !!!step_expr, !!!additional_args)
-        result_se <- rlang::eval_tidy(op_call, env = parent.frame())
-      }
+      # Execute this step. The call is built with call2() so that arguments
+      # such as '.preserve' are matched to the formals of the verb. Splicing
+      # them with '!!!' instead would place them inside '...', where they
+      # would be mistaken for a further expression to decompose.
+      op_call <- rlang::call2(fx_name, result_se, !!!step_expr, !!!additional_args)
+      result_se <- rlang::eval_tidy(op_call, env = parent.frame())
     }
     
     return(result_se)

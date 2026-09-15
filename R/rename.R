@@ -40,7 +40,7 @@ rename.SummarizedExperiment <- function(.data, ...) {
     special_columns <- get_special_columns(
         # Decrease the size of the dataset
         .data[1:min(100, nrow(.data)), 1:min(20, ncol(.data))]
-    ) |> c(get_needed_columns(.data))
+    ) |> c(get_needed_columns(.data), colnames_auxiliary_colData(.data))
     
     if (any(old_names %in% special_columns)) {
         columns <- intersect(old_names, special_columns) |> paste(collapse=", ")

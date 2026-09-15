@@ -145,6 +145,18 @@ mutate.SummarizedExperiment <- function(.data, ...) {
        # Check if query is composed (multiple expressions)
     if (is_composed("mutate", ...)) return(decompose_tidy_operation("mutate", ...)(.data))
 
+        cols <- names(enquos(...))
+        auxiliary_cols <- intersect(cols, colnames_auxiliary_colData(.data))
+        if (length(auxiliary_cols)) {
+            tidy_stop(paste0(
+                "you are trying to mutate a column that is view only ",
+                paste(auxiliary_cols, collapse=", "),
+                " (it is not present in the colData). ",
+                "If you want to mutate a view-only column, ",
+                "make a copy and mutate that one."
+            ))
+        }
+
         # Check for scope and dispatch elegantly
         scope_report <- analyze_query_scope_mutate(.data, ...)
         scope <- scope_report$scope
@@ -202,7 +214,7 @@ mutate_via_tibble <- function(.data, ...) {
     special_columns <- get_special_columns(
         # Decrease the size of the dataset
         .data[1:min(100, nrow(.data)), 1:min(20, ncol(.data))]
-    ) |> c(get_needed_columns(.data))
+    ) |> c(get_needed_columns(.data), colnames_auxiliary_colData(.data))
     
     tst <-
         intersect(

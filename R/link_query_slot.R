@@ -165,7 +165,11 @@ extract_assay_colnames <- function(.data_mutated, se, col_data = NULL,
     setdiff(c(f_(se)$name, s_(se)$name, colnames(as.data.frame(head(rowRanges(se), 1))) )) %>%
     setdiff(if (!is.null(col_data)) colnames(col_data) else c()) %>% 
     setdiff(if (!is.null(row_data)) colnames(row_data) else c()) %>%
-    setdiff(assays(se) %>% names)
+    setdiff(assays(se) %>% names) %>%
+    
+    # Columns from 'auxiliary_colData()' are view-only and must not become
+    # assays, even though they vary along the samples
+    setdiff(colnames_auxiliary_colData(se))
   
   return(colnames_assay)
 }

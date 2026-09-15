@@ -51,8 +51,10 @@ as_tibble.SummarizedExperiment <- function(x, ...,
 
         # Convert to tibble
         tibble::as_tibble(rownames=s_(x)$name) %>% 
-        setNames(c(s_(x)$name, colnames(colData(x))))
-  
+        setNames(c(s_(x)$name, colnames(colData(x)))) %>%
+        # View-only columns from subclasses (e.g. reduced dimensions).
+        join_auxiliary_colData(x)
+
     range_list <- if (skip_GRanges) {
         list(tibble())
     } else {
