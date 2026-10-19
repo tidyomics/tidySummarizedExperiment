@@ -101,7 +101,9 @@ setGeneric("subset_sample_data", function(.data)
         str_replace("^sample$", "sample.x")
     ) |>
     # Convert to tibble
-    tibble::as_tibble(rownames = sample__$name)
+    tibble::as_tibble(rownames = sample__$name) |>
+    # Restore the original colData names after conversion
+    setNames(c(sample__$name, colnames(colData(.data))))
 }
 
 #' subset_sample_data
@@ -185,4 +187,3 @@ setMethod("subset_feature_data",
 setMethod("subset_feature_data",
           "RangedSummarizedExperiment",
           .subset_feature_data)
-
