@@ -101,7 +101,7 @@ setGeneric("subset_sample_data", function(.data)
         str_replace("^sample$", "sample.x")
     ) |>
     # Convert to tibble
-    tibble::as_tibble(rownames = sample__$name)
+    tibble::as_tibble(rownames = s_(.data)$name)
 }
 
 #' subset_sample_data
@@ -147,7 +147,7 @@ setMethod("subset_sample_data",
 
   gene_info <-
     row_data_fixed |>
-    tibble::as_tibble(rownames = feature__$name)
+    tibble::as_tibble(rownames = f_(.data)$name)
 
   if (!join_GRanges) {
     return(gene_info)
@@ -155,10 +155,10 @@ setMethod("subset_sample_data",
 
   range_info <-
     get_special_datasets(.data) |>
-    reduce(left_join, by = feature__$name)
+    reduce(left_join, by = f_(.data)$name)
 
   if (nrow(range_info) > 0) {
-    gene_info |> left_join(range_info, by = feature__$name)
+    gene_info |> left_join(range_info, by = f_(.data)$name)
   } else {
     gene_info
   }
