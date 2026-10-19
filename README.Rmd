@@ -75,27 +75,28 @@ Load libraries used in the examples.
 ```{r}
 library(ggplot2)
 library(tidySummarizedExperiment)
+tidy_print_on(remember = TRUE)
 ```
 
 
-# Create `tidySummarizedExperiment`, the best of both worlds!
+# `tidySummarizedExperiment`, the best of both worlds!
 
-This is a SummarizedExperiment object but it is evaluated as a tibble. So it is fully compatible both with SummarizedExperiment and tidyverse APIs.
+This is a SummarizedExperiment object, but it becomes fully compatible with both SummarizedExperiment and tidyverse APIs.
 
 ```{r}
-pasilla_tidy <- tidySummarizedExperiment::pasilla 
+pasilla <- tidySummarizedExperiment::pasilla 
 ```
 
 **It looks like a tibble**
 
 ```{r}
-pasilla_tidy
+pasilla
 ```
 
 **But it is a SummarizedExperiment object after all**
 
 ```{r}
-assays(pasilla_tidy)
+assays(pasilla)
 ```
 
 
@@ -106,42 +107,42 @@ We can use tidyverse commands to explore the tidy SummarizedExperiment object.
 We can use `slice` to choose rows by position, for example to choose the first row.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     slice(1)
 ```
 
 We can use `filter` to choose rows by criteria.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     filter(condition == "untreated")
 ```
 
 We can use `select` to choose columns.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     select(.sample)
 ```
 
 We can use `count` to count how many rows we have for each sample.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     count(.sample)
 ```
 
 We can use `distinct` to see what distinct sample information we have.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     distinct(.sample, condition, type)
 ```
 
 We could use `rename` to rename a column. For example, to modify the type column name.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     rename(sequencing=type)
 ```
 
@@ -149,14 +150,14 @@ We could use `mutate` to create a column. For example, we could create a new typ
 and paired instead of single_end and paired_end.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     mutate(type=gsub("_end", "", type))
 ```
 
 We could use `unite` to combine multiple columns into a single column.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     unite("group", c(condition, type))
 ```
 
@@ -165,7 +166,7 @@ We can also combine commands with the tidyverse pipe `%>%`.
 For example, we could combine `group_by` and `summarise` to get the total counts for each sample.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     group_by(.sample) %>%
     summarise(total_counts=sum(counts))
 ```
@@ -173,7 +174,7 @@ pasilla_tidy %>%
 We could combine `group_by`, `mutate` and `filter` to get the transcripts with mean count > 0.
 
 ```{r}
-pasilla_tidy %>%
+pasilla %>%
     group_by(.feature) %>%
     mutate(mean_count=mean(counts)) %>%
     filter(mean_count > 0)
@@ -203,12 +204,12 @@ my_theme <-
     )
 ```
 
-We can treat `pasilla_tidy` as a normal tibble for plotting.
+We can treat `pasilla` as a normal tibble for plotting.
 
 Here we plot the distribution of counts per sample.
 
 ```{r plot1}
-pasilla_tidy %>%
+pasilla %>%
     ggplot(aes(counts + 1, group=.sample, color=`type`)) +
     geom_density() +
     scale_x_log10() +
