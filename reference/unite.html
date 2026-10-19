@@ -51,7 +51,7 @@
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Unite multiple columns into one by pasting strings together</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/copilot/fix-filter-non-syntactic-names/R/tidyr_methods.R" class="external-link"><code>R/tidyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/tidyr_methods.R" class="external-link"><code>R/tidyr_methods.R</code></a></small>
     <div class="hidden name"><code>unite.Rd</code></div>
     </div>
 
@@ -117,7 +117,8 @@ each value.</p></dd>
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu">tidySummarizedExperiment</span><span class="fu">::</span><span class="va"><a href="pasilla.html">pasilla</a></span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>    <span class="fu">unite</span><span class="op">(</span><span class="st">"group"</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">condition</span>, <span class="va">type</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> tidySummarizedExperiment says: Key columns are missing. A data frame is returned for independent data analysis.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> tidySummarizedExperiment says: Key columns are missing. A data frame is</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   returned for independent data analysis.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=14599 | Samples=7 | </span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # <span style="color: #555555;">  Assays=counts</span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># </span><span style="color: #5555FF;">                                  |------ COVARIATES ----|</span></span>

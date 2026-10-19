@@ -52,7 +52,7 @@ This function is equivalent to cbind but provides a tidyverse-like interface."><
   <div class="col-md-9 contents">
     <div class="page-header">
     <h1>Append samples from multiple SummarizedExperiment objects</h1>
-    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/copilot/fix-filter-non-syntactic-names/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
+    <small class="dont-index">Source: <a href="https://github.com/stemangiola/tidySummarizedExperiment/blob/master/R/dplyr_methods.R" class="external-link"><code>R/dplyr_methods.R</code></a></small>
     <div class="hidden name"><code>append_samples.Rd</code></div>
     </div>
 
@@ -95,7 +95,8 @@ This function is equivalent to <code>cbind</code> but provides a tidyverse-like 
     <h2>Examples</h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">se</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">append_samples</span><span class="op">(</span><span class="va">se</span>, <span class="va">se</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> tidySummarizedExperiment says: you have duplicated sample names, they will be made unique.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> tidySummarizedExperiment says: you have duplicated sample names, they will be</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   made unique.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>you have duplicated sample names, they will be made unique.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> <span style="color: #949494;"># A SummarizedExperiment-tibble abstraction: </span><span style="color: #555555;">Features=100 | Samples=16 | </span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> # <span style="color: #555555;">  Assays=counts</span></span>
