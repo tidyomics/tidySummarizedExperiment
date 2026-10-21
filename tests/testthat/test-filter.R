@@ -44,6 +44,29 @@ test_that("filter can select samples and features by .sample and .feature", {
     expect_equal(ncol(result), ncol(se))
 })
 
+test_that("filter handles non-syntactic colData names", {
+    counts <- matrix(
+        1:6,
+        nrow = 3,
+        dimnames = list(paste0("gene", 1:3), c("s1", "s2"))
+    )
+    se <- SummarizedExperiment(
+        assays = list(counts = counts),
+        colData = S4Vectors::DataFrame(
+            `ROI Class` = c("Total", "Tumor"),
+            subjectID = c("S01", "S02"),
+            check.names = FALSE
+        )
+    )
+
+    result <- se %>% filter(`ROI Class` == "Total")
+
+    expect_equal(colnames(result), "s1")
+    expect_equal(colnames(colData(result)), c("ROI Class", "subjectID"))
+    expect_equal(as.character(colData(result)$`ROI Class`), "Total")
+
+})
+
 test_that("filter handles rowData-only predicates (features)", {
     se <- create_airway_test_se()
 
@@ -108,5 +131,3 @@ test_that("assay-only filter yields non-rectangular tibble fallback", {
     expect_identical(colnames(res_tbl), colnames(res))
     expect_identical(nrow(res_tbl), nrow(res))
 })
-
-

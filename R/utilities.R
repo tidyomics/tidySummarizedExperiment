@@ -1378,10 +1378,14 @@ DataFrame_rownames <- function(data, rownames_col = "rowname__") {
     data_without_rownames <- data[, colnames(data) != rownames_col, drop = FALSE]
     
     # Convert to DataFrame with rownames
-    result <- DataFrame(data_without_rownames, row.names = row_names)
+    result <- DataFrame(
+      data_without_rownames,
+      row.names = row_names,
+      check.names = FALSE
+    )
     return(result)
   } else {
     # No rownames column, just convert to DataFrame
-    return(as(data, "DataFrame"))
+    return(DataFrame(data, check.names = FALSE))
   }
 }
