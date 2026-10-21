@@ -28,6 +28,22 @@ test_that("filter handles colData-only predicates (samples)", {
     expect_equal(S4Vectors::metadata(result)$latest_filter_scope_report$scope, "coldata_only")
 })
 
+test_that("filter can select samples and features by .sample and .feature", {
+    se <- create_airway_test_se()
+
+    sample_name <- colnames(se)[1]
+    result <- se %>% filter(.sample == sample_name)
+    expect_s4_class(result, "SummarizedExperiment")
+    expect_equal(colnames(result), sample_name)
+    expect_equal(nrow(result), nrow(se))
+
+    feature_name <- rownames(se)[1]
+    result <- se %>% filter(.feature == feature_name)
+    expect_s4_class(result, "SummarizedExperiment")
+    expect_equal(rownames(result), feature_name)
+    expect_equal(ncol(result), ncol(se))
+})
+
 test_that("filter handles non-syntactic colData names", {
     counts <- matrix(
         1:6,
@@ -48,6 +64,7 @@ test_that("filter handles non-syntactic colData names", {
     expect_equal(colnames(result), "s1")
     expect_equal(colnames(colData(result)), c("ROI Class", "subjectID"))
     expect_equal(as.character(colData(result)$`ROI Class`), "Total")
+
 })
 
 test_that("filter handles rowData-only predicates (features)", {

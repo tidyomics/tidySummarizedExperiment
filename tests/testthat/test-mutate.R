@@ -106,6 +106,51 @@ test_that("mutate can reference special columns .feature and .sample", {
     expect_equal(S4Vectors::metadata(result)$latest_mutate_scope_report$scope, "coldata_only")
 })
 
+test_that("mutate copies .sample and .feature without storing the view columns", {
+    # https://github.com/tidyomics/tidySummarizedExperiment/issues/127
+    se <- pasilla
+
+    result <- se %>% mutate(sample_name = .sample)
+    expect_s4_class(result, "SummarizedExperiment")
+    expect_equal(dim(result), dim(se))
+    expect_equal(colnames(result), colnames(se))
+    expect_equal(colData(result)$sample_name, colnames(se))
+    expect_false(".sample" %in% colnames(colData(result)))
+    expect_equal(assayNames(result), assayNames(se))
+    expect_equal(
+        S4Vectors::metadata(result)$latest_mutate_scope_report$scope,
+        "coldata_only"
+    )
+
+    result <- se %>% mutate(feature_name = .feature)
+    expect_equal(dim(result), dim(se))
+    expect_equal(rownames(result), rownames(se))
+    expect_equal(rowData(result)$feature_name, rownames(se))
+    expect_false(".feature" %in% colnames(rowData(result)))
+    expect_equal(
+        S4Vectors::metadata(result)$latest_mutate_scope_report$scope,
+        "rowdata_only"
+    )
+
+    # .sample stays available when the expression also uses real sample metadata
+    result <- se %>% mutate(label = paste(.sample, condition, sep = ":"))
+    expect_equal(colData(result)$label, paste(colnames(se), colData(se)$condition, sep = ":"))
+    expect_false(".sample" %in% colnames(colData(result)))
+    expect_equal(
+        S4Vectors::metadata(result)$latest_mutate_scope_report$scope,
+        "coldata_only"
+    )
+
+    # The tidy-ranges tutorial builds a sample label from .sample, then edits colData
+    result <- se %>% mutate(
+        sample_name = sub("^untrt", "", .sample),
+        condition = toupper(condition)
+    )
+    expect_equal(colData(result)$sample_name, sub("^untrt", "", colnames(se)))
+    expect_equal(as.character(colData(result)$condition), toupper(colData(se)$condition))
+    expect_false(".sample" %in% colnames(colData(result)))
+})
+
 test_that("mutate handles simple assay operations correctly", {
     se <- create_airway_test_se()
     
