@@ -81,3 +81,26 @@ test_that("full_join", {
       expect_equal(meta$latest_join_scope_report$scope, "coldata_only")
     }
 })
+
+test_that("rowdata_only joins keep feature annotations in rowData via fast path", {
+    se <- pasilla[1:10, ]
+    SummarizedExperiment::rowData(se)$gene_group <- rep(c("A", "B"), 5)
+
+    # Constant feature annotation must stay in rowData, not be placed in colData
+    res_left <- se %>%
+        left_join(tibble::tibble(gene_group = c("A", "B"), annot = "verified"), by = "gene_group")
+
+    expect_s4_class(res_left, "SummarizedExperiment")
+    expect_true("annot" %in% colnames(SummarizedExperiment::rowData(res_left)))
+    expect_false("annot" %in% colnames(SummarizedExperiment::colData(res_left)))
+    expect_equal(SummarizedExperiment::rowData(res_left)$annot, rep("verified", 10))
+    expect_equal(S4Vectors::metadata(res_left)$latest_join_scope_report$scope, "rowdata_only")
+
+    res_inner <- se %>%
+        inner_join(tibble::tibble(gene_group = "A", score = 10), by = "gene_group")
+
+    expect_s4_class(res_inner, "SummarizedExperiment")
+    expect_equal(nrow(res_inner), 5)
+    expect_true("score" %in% colnames(SummarizedExperiment::rowData(res_inner)))
+    expect_equal(SummarizedExperiment::rowData(res_inner)$score, rep(10, 5))
+})

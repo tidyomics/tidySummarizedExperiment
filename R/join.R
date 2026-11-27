@@ -109,7 +109,7 @@ join_efficient_for_SE <- function(x, y, by = NULL, copy = FALSE,
     if (
       is.na(pull(row_data_tibble, !!f_(x)$symbol)) %>% any | 
       duplicated(pull(row_data_tibble, !!f_(x)$symbol)) %>% any |
-      pull(row_data_tibble, !!f_(x)$symbol) %>% setdiff(rownames(colData(x))) %>% length() %>% gt(0)
+      pull(row_data_tibble, !!f_(x)$symbol) %>% setdiff(rownames(rowData(x))) %>% length() %>% gt(0)
     ) return(join_efficient_for_SE(x, y, by = by, copy = copy, suffix = suffix, 
                                    join_function, force_tibble_route = TRUE, ...))
     
